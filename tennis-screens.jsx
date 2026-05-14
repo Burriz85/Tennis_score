@@ -54,7 +54,10 @@ function SetupScreen({ initial, onStart }) {
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       color: '#fff', fontFamily: 'Inter, system-ui, sans-serif',
-      padding: '28px 28px', boxSizing: 'border-box', gap: 18,
+      padding: 'clamp(16px, 4vh, 32px) clamp(20px, 6vw, 36px)',
+      boxSizing: 'border-box',
+      gap: 'clamp(10px, 2vh, 18px)',
+      overflow: 'auto',
     }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{
@@ -124,31 +127,30 @@ function MatchSide({ state, p, onPoint }) {
   const setsToWin = state.setsToWin;
 
   // sets boxes (completed + current)
+  const setBoxStyle = (won, current) => ({
+    minWidth: 'clamp(22px, 4vw, 28px)',
+    padding: '2px clamp(4px, 1vw, 6px)',
+    borderRadius: 4,
+    background: current
+      ? 'rgba(255,255,255,0.20)'
+      : (won ? 'rgba(216,255,94,0.85)' : 'rgba(255,255,255,0.12)'),
+    border: '1px solid ' + (current
+      ? 'rgba(255,255,255,0.35)'
+      : (won ? 'transparent' : 'rgba(255,255,255,0.22)')),
+    color: (!current && won) ? '#13260b' : '#fff',
+    fontSize: 'clamp(12px, 1.8vh, 14px)',
+    fontWeight: 700, textAlign: 'center',
+    fontVariantNumeric: 'tabular-nums',
+  });
   const setBoxes = state.completedSets.map((s, i) => {
     const my = s[p], theirs = s[1 - p];
     const won = my > theirs;
     return (
-      <div key={i} style={{
-        minWidth: 26, padding: '2px 6px',
-        borderRadius: 4,
-        background: won ? 'rgba(216,255,94,0.85)' : 'rgba(255,255,255,0.12)',
-        color: won ? '#13260b' : '#fff',
-        border: '1px solid ' + (won ? 'transparent' : 'rgba(255,255,255,0.22)'),
-        fontSize: 14, fontWeight: 700, textAlign: 'center',
-        fontVariantNumeric: 'tabular-nums',
-      }}>{my}</div>
+      <div key={i} style={setBoxStyle(won, false)}>{my}</div>
     );
   });
   setBoxes.push(
-    <div key="cur" style={{
-      minWidth: 26, padding: '2px 6px',
-      borderRadius: 4,
-      background: 'rgba(255,255,255,0.20)',
-      border: '1px solid rgba(255,255,255,0.35)',
-      color: '#fff',
-      fontSize: 14, fontWeight: 700, textAlign: 'center',
-      fontVariantNumeric: 'tabular-nums',
-    }}>{state.games[p]}</div>
+    <div key="cur" style={setBoxStyle(false, true)}>{state.games[p]}</div>
   );
 
   // sets-won pips
@@ -157,9 +159,11 @@ function MatchSide({ state, p, onPoint }) {
     const won = i < setsWon;
     pips.push(
       <div key={i} style={{
-        width: 9, height: 9, borderRadius: '50%',
+        width: 'clamp(7px, 1.2vh, 9px)', height: 'clamp(7px, 1.2vh, 9px)',
+        borderRadius: '50%',
         background: won ? '#fff' : 'transparent',
         border: '1.5px solid rgba(255,255,255,0.7)',
+        flexShrink: 0,
       }} />
     );
   }
@@ -182,42 +186,50 @@ function MatchSide({ state, p, onPoint }) {
         transform: rotated ? 'rotate(180deg)' : 'none',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        padding: '24px 20px', boxSizing: 'border-box',
+        padding: 'clamp(12px, 3vh, 24px) clamp(10px, 3vw, 24px)',
+        boxSizing: 'border-box',
         pointerEvents: 'none',
       }}>
         {/* name + server + pips */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
+          display: 'flex', alignItems: 'center', gap: 'clamp(6px, 1.5vw, 10px)',
           background: 'rgba(0,0,0,0.40)',
           backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
-          padding: '6px 14px', borderRadius: 999,
+          padding: 'clamp(4px, 1vh, 6px) clamp(10px, 3vw, 14px)',
+          borderRadius: 999,
           border: '1px solid rgba(255,255,255,0.18)',
         }}>
           {isServer && (
             <div style={{
-              width: 12, height: 12, borderRadius: '50%',
+              width: 'clamp(10px, 1.6vh, 12px)', height: 'clamp(10px, 1.6vh, 12px)',
+              borderRadius: '50%',
               background: '#e3ff5b', border: '1.5px solid #fff',
               boxShadow: '0 0 8px rgba(227,255,91,0.6)',
+              flexShrink: 0,
             }} title="Server" />
           )}
-          <span style={{ fontSize: 13, fontWeight: 600 }}>{state.names[p]}</span>
-          <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.3)' }} />
-          <div style={{ display: 'flex', gap: 4 }}>{pips}</div>
+          <span style={{ fontSize: 'clamp(11px, 1.8vh, 14px)', fontWeight: 600 }}>{state.names[p]}</span>
+          <div style={{ width: 1, height: 'clamp(10px, 1.6vh, 12px)', background: 'rgba(255,255,255,0.3)' }} />
+          <div style={{ display: 'flex', gap: 'clamp(3px, 0.6vw, 4px)' }}>{pips}</div>
         </div>
 
         {/* big score */}
         <div style={{
-          fontSize: myPts.length >= 3 ? 112 : 148,
+          fontSize: myPts.length >= 3
+            ? 'min(20vh, 28vw)'
+            : 'min(26vh, 40vw)',
           fontWeight: 700, lineHeight: 1, letterSpacing: '-0.04em',
           textShadow: '0 4px 24px rgba(0,0,0,0.4)',
           fontVariantNumeric: 'tabular-nums',
-          marginTop: 14, marginBottom: 12,
+          marginTop: 'clamp(8px, 2vh, 14px)',
+          marginBottom: 'clamp(8px, 1.5vh, 12px)',
         }}>{myPts}</div>
 
         {/* set row */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.85,
+          display: 'flex', alignItems: 'center', gap: 'clamp(6px, 1.5vw, 8px)',
+          fontSize: 'clamp(9px, 1.4vh, 11px)', letterSpacing: '0.16em',
+          textTransform: 'uppercase', opacity: 0.85,
         }}>
           <span style={{ opacity: 0.7 }}>Sett</span>
           <div style={{ display: 'flex', gap: 3 }}>{setBoxes}</div>
@@ -225,15 +237,19 @@ function MatchSide({ state, p, onPoint }) {
 
         {/* tap hint button — near the net edge of this half */}
         <div style={{
-          position: 'absolute', bottom: 18, left: 0, right: 0,
+          position: 'absolute',
+          bottom: 'clamp(12px, 3vh, 22px)', left: 0, right: 0,
           display: 'flex', justifyContent: 'center',
         }}>
           <div style={{
-            width: 64, height: 64, borderRadius: '50%',
+            width: 'min(11vh, 18vw)', height: 'min(11vh, 18vw)',
+            minWidth: 48, minHeight: 48,
+            maxWidth: 80, maxHeight: 80,
+            borderRadius: '50%',
             background: 'linear-gradient(180deg, #d8ff5e 0%, #b6e636 100%)',
             color: '#13260b',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 36, fontWeight: 300, lineHeight: 1,
+            fontSize: 'min(7vh, 11vw)', fontWeight: 300, lineHeight: 1,
             boxShadow: '0 8px 22px rgba(0,0,0,0.4), inset 0 -3px 0 rgba(0,0,0,0.12)',
             border: '3px solid rgba(255,255,255,0.85)',
           }}>+</div>
@@ -254,10 +270,11 @@ function CenterControls({ state, onUndo, onReset, canUndo }) {
       disabled={disabled}
       title={title}
       style={{
-        width: 38, height: 38, borderRadius: '50%',
+        width: 'clamp(34px, 5.5vh, 42px)', height: 'clamp(34px, 5.5vh, 42px)',
+        borderRadius: '50%',
         background: 'rgba(0,0,0,0.6)',
         border: '1px solid rgba(255,255,255,0.22)',
-        color: '#fff', fontSize: 16,
+        color: '#fff', fontSize: 'clamp(14px, 2.3vh, 18px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         cursor: disabled ? 'default' : 'pointer',
         opacity: disabled ? 0.35 : 1,
@@ -270,12 +287,13 @@ function CenterControls({ state, onUndo, onReset, canUndo }) {
       left: 0, right: 0, top: '50%',
       transform: 'translateY(-50%)',
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      padding: '0 14px',
+      padding: '0 clamp(8px, 2.5vw, 16px)',
+      gap: 8,
       pointerEvents: 'none',
       zIndex: 4,
     }}>
       {/* left: undo */}
-      <div style={{ pointerEvents: 'auto' }}>
+      <div style={{ pointerEvents: 'auto', flexShrink: 0 }}>
         <Btn onClick={onUndo} disabled={!canUndo} title="Angre">↶</Btn>
       </div>
 
@@ -285,18 +303,21 @@ function CenterControls({ state, onUndo, onReset, canUndo }) {
         backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
         border: '1px solid rgba(255,255,255,0.2)',
         borderRadius: 999,
-        padding: '6px 14px',
+        padding: 'clamp(4px, 1vh, 6px) clamp(8px, 2.5vw, 14px)',
         color: '#fff',
-        fontSize: 10.5,
-        letterSpacing: '0.12em',
+        fontSize: 'clamp(9px, 1.6vh, 11px)',
+        letterSpacing: '0.08em',
         textTransform: 'uppercase',
         fontWeight: 600,
         whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        maxWidth: 'calc(100% - 100px)',
         fontFamily: 'Inter, system-ui, sans-serif',
       }}>{statusLine(state)}</div>
 
       {/* right: reset */}
-      <div style={{ pointerEvents: 'auto' }}>
+      <div style={{ pointerEvents: 'auto', flexShrink: 0 }}>
         <Btn onClick={onReset} title="Nullstill">⟳</Btn>
       </div>
     </div>
