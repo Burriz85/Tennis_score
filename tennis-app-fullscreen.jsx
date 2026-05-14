@@ -9,9 +9,33 @@ function AppFull() {
   });
   const [history, setHistory] = React.useState([]);
   const [state, setState] = React.useState(makeInitialMatch(['Spiller 1', 'Spiller 2'], 5, 0));
+  const [voiceOn, setVoiceOn] = React.useState(false);
 
   // Keep screen awake during match
   useWakeLock(screen === 'match' && state.matchWinner == null);
+
+  // ref so voice callback can reach the latest handlePoint
+  const handlePointRef = React.useRef(null);
+
+  // Voice recognition
+  const handleVoiceCommand = React.useCallback((cmd) => {
+    if (cmd && cmd.kind === 'point') {
+      handlePointRef.current && handlePointRef.current(cmd.player);
+    }
+  }, []);
+  const voice = useVoice({
+    enabled: voiceOn && screen === 'match' && state.matchWinner == null,
+    onCommand: handleVoiceCommand,
+  });
+
+  function toggleVoice() {
+    if (!voice.supported) {
+      // give user clear feedback when unsupported
+      alert('Stemmegjenkjenning støttes ikke i denne nettleseren eller iframen. Test på telefonen via GitHub Pages-URLen din.');
+      return;
+    }
+    setVoiceOn(v => !v);
+  }
 
   function startMatch(cfg) {
     setLastSetup(cfg);
@@ -31,11 +55,11 @@ function AppFull() {
                     prevState.games[0] + prevState.games[1];
     const setWon  = nextState.completedSets.length > prevState.completedSets.length;
     const matchWon = nextState.matchWinner != null && prevState.matchWinner == null;
-    // Match sound is fired inside WinnerOverlay; play game/set here.
     if (matchWon) return;
     if (setWon) playSetSound();
     else if (gameWon) playGameSound();
   }
+  handlePointRef.current = handlePoint;
   function handleUndo() {
     if (history.length === 0) return;
     const prev = history[history.length - 1];
@@ -69,7 +93,14 @@ function AppFull() {
             onUndo={handleUndo}
             onReset={handleReset}
             canUndo={history.length > 0}
+            voiceProps={{
+              enabled: voiceOn,
+              listening: voice.listening,
+              supported: voice.supported,
+              onToggle: toggleVoice,
+            }}
           />
+          <VoiceToast heard={voice.lastHeard} />
           <WinnerOverlay
             state={state}
             onNewMatch={handleNewMatch}

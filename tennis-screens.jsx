@@ -279,7 +279,7 @@ function MatchSide({ state, p, onPoint }) {
 // Center controls (status pill + undo/reset) — sits ON the net.
 // Horizontal layout for portrait.
 // ──────────────────────────────────────────────────────────────
-function CenterControls({ state, onUndo, onReset, canUndo }) {
+function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
   const Btn = ({ onClick, children, title, disabled }) => (
     <button
       onClick={(e) => { e.stopPropagation(); onClick(); }}
@@ -332,8 +332,16 @@ function CenterControls({ state, onUndo, onReset, canUndo }) {
         fontFamily: 'Inter, system-ui, sans-serif',
       }}>{statusLine(state)}</div>
 
-      {/* right: reset */}
-      <div style={{ pointerEvents: 'auto', flexShrink: 0 }}>
+      {/* right: reset + mic */}
+      <div style={{ pointerEvents: 'auto', flexShrink: 0, display: 'flex', gap: 6 }}>
+        {voiceProps && (
+          <MicButton
+            enabled={voiceProps.enabled}
+            listening={voiceProps.listening}
+            supported={voiceProps.supported}
+            onToggle={voiceProps.onToggle}
+          />
+        )}
         <Btn onClick={onReset} title="Nullstill">⟳</Btn>
       </div>
     </div>
