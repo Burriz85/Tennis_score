@@ -108,8 +108,8 @@ function speak(text, lang = 'nb-NO') {
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang = lang;
-  utt.rate = 0.85;
-  utt.pitch = 1.05;
+  utt.rate = 0.78;
+  utt.pitch = 0.7;
   utt.volume = 1.0;
   window.speechSynthesis.speak(utt);
 }

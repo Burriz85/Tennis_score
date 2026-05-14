@@ -301,7 +301,7 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
         <div style={{ display: 'flex', gap: 'clamp(6px,1.5vw,10px)', pointerEvents: 'auto' }}>
           {soundBtns.map(({ label, play, say, lang, color }) => (
             <button key={label}
-              onClick={(e) => { e.stopPropagation(); play(); speak(say, lang); }}
+              onClick={(e) => { e.stopPropagation(); speak(say, lang); }}
               style={{
                 background: 'rgba(0,0,0,0.60)',
                 backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
