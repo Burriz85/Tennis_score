@@ -51,8 +51,12 @@ function AppStyles() {
       }
       @media (orientation: landscape) {
         .plus-btn-wrap {
-          bottom: 0; left: clamp(10px,2.5vw,20px); right: auto;
+          bottom: clamp(10px,2.5vh,18px); left: clamp(10px,2.5vw,20px); right: auto;
           justify-content: flex-start; align-items: center;
+        }
+        .match-side-p1 .plus-btn-wrap {
+          left: auto; right: clamp(10px,2.5vw,20px);
+          justify-content: flex-end;
         }
       }
 

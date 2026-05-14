@@ -175,6 +175,7 @@ function MatchSide({ state, p, onPoint }) {
 
   return (
     <div
+      className={`match-side match-side-p${p}`}
       onClick={() => onPoint(p)}
       style={{
         flex: 1, position: 'relative',
