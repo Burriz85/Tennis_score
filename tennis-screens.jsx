@@ -265,9 +265,9 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
   );
 
   const soundBtns = [
-    { label: 'Ute',  play: playOutSound,  say: 'Out',   lang: 'en-GB', color: '#ff5e5e' },
-    { label: 'Let',  play: playLetSound,  say: 'Let',   lang: 'en-GB', color: '#d8ff5e' },
-    { label: 'Feil', play: playFoulSound, say: 'Fault', lang: 'en-GB', color: '#ff9d3a' },
+    { label: 'Ute',  file: 'sound-out.mp3',   color: '#ff5e5e' },
+    { label: 'Let',  file: 'sound-let.mp3',   color: '#d8ff5e' },
+    { label: 'Feil', file: 'sound-fault.mp3', color: '#ff9d3a' },
   ];
 
   return (
@@ -299,9 +299,9 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
 
         {/* row 2: sound buttons */}
         <div style={{ display: 'flex', gap: 'clamp(6px,1.5vw,10px)', pointerEvents: 'auto' }}>
-          {soundBtns.map(({ label, play, say, lang, color }) => (
+          {soundBtns.map(({ label, file, color }) => (
             <button key={label}
-              onClick={(e) => { e.stopPropagation(); speak(say, lang); }}
+              onClick={(e) => { e.stopPropagation(); playFile(file); }}
               style={{
                 background: 'rgba(0,0,0,0.60)',
                 backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',

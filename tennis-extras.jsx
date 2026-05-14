@@ -101,17 +101,11 @@ function playFoulSound() {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Speech synthesis — announce calls
+// Audio file playback
 // ──────────────────────────────────────────────────────────────
-function speak(text, lang = 'nb-NO') {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = lang;
-  utt.rate = 0.78;
-  utt.pitch = 0.7;
-  utt.volume = 1.0;
-  window.speechSynthesis.speak(utt);
+function playFile(src) {
+  const audio = new Audio(src);
+  audio.play().catch(() => {});
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -317,5 +311,5 @@ function CoinFace({ label, name, back }) {
 Object.assign(window, {
   useWakeLock, Confetti, CoinToss,
   playGameSound, playSetSound, playMatchSound, playCoinSound,
-  playOutSound, playLetSound, playFoulSound, speak,
+  playOutSound, playLetSound, playFoulSound, playFile,
 });
