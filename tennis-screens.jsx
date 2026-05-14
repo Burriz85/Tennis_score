@@ -306,6 +306,40 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
 }
 
 // ──────────────────────────────────────────────────────────────
+// Sound buttons — Out / Let / Foul
+// ──────────────────────────────────────────────────────────────
+function SoundButtons() {
+  const btns = [
+    { label: 'Ute',  play: playOutSound,  say: 'Out',  lang: 'en-GB', color: '#ff5e5e' },
+    { label: 'Let',  play: playLetSound,  say: 'Let',  lang: 'en-GB', color: '#d8ff5e' },
+    { label: 'Feil', play: playFoulSound, say: 'Fault', lang: 'en-GB', color: '#ff9d3a' },
+  ];
+  return (
+    <div className="sound-buttons-wrap">
+      {btns.map(({ label, play, say, color }) => (
+        <button
+          key={label}
+          onClick={(e) => { e.stopPropagation(); play(); speak(say, lang); }}
+          style={{
+            background: 'rgba(0,0,0,0.60)',
+            backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+            border: `1.5px solid ${color}55`,
+            color,
+            borderRadius: 999,
+            padding: 'clamp(5px,1.2vh,8px) clamp(12px,3vw,20px)',
+            fontSize: 'clamp(11px,1.8vh,14px)',
+            fontWeight: 700,
+            fontFamily: 'Inter, system-ui, sans-serif',
+            letterSpacing: '0.06em',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+          }}>{label}</button>
+      ))}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────
 // Winner overlay
 // ──────────────────────────────────────────────────────────────
 function WinnerOverlay({ state, onNewMatch, onRematch }) {
@@ -349,4 +383,4 @@ function WinnerOverlay({ state, onNewMatch, onRematch }) {
   );
 }
 
-Object.assign(window, { SetupScreen, MatchSide, CenterControls, WinnerOverlay });
+Object.assign(window, { SetupScreen, MatchSide, CenterControls, WinnerOverlay, SoundButtons });

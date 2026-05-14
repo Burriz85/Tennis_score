@@ -83,6 +83,36 @@ function playCoinSound() {
   beep(900, 60, { type: 'sine', volume: 0.10, start: 0.06 });
   beep(1500, 80, { type: 'sine', volume: 0.12, start: 0.12 });
 }
+function playOutSound() {
+  // sharp descending buzz — "ute!"
+  beep(520, 70, { type: 'sawtooth', volume: 0.18 });
+  beep(340, 130, { type: 'sawtooth', volume: 0.20, start: 0.06 });
+}
+function playLetSound() {
+  // light net-cord ping — neutral
+  beep(1320, 60, { type: 'sine', volume: 0.13 });
+  beep(1760, 100, { type: 'sine', volume: 0.10, start: 0.04 });
+  beep(1320, 180, { type: 'sine', volume: 0.08, start: 0.10 });
+}
+function playFoulSound() {
+  // low double buzz — fault/foul
+  beep(200, 100, { type: 'square', volume: 0.14 });
+  beep(160, 140, { type: 'square', volume: 0.16, start: 0.12 });
+}
+
+// ──────────────────────────────────────────────────────────────
+// Speech synthesis — announce calls
+// ──────────────────────────────────────────────────────────────
+function speak(text, lang = 'nb-NO') {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = lang;
+  utt.rate = 0.85;
+  utt.pitch = 1.05;
+  utt.volume = 1.0;
+  window.speechSynthesis.speak(utt);
+}
 
 // ──────────────────────────────────────────────────────────────
 // Confetti — canvas particle system overlay
@@ -287,4 +317,5 @@ function CoinFace({ label, name, back }) {
 Object.assign(window, {
   useWakeLock, Confetti, CoinToss,
   playGameSound, playSetSound, playMatchSound, playCoinSound,
+  playOutSound, playLetSound, playFoulSound, speak,
 });
