@@ -45,7 +45,7 @@ function AppFull() {
       )}
       {screen === 'match' && (
         <>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'row' }}>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
             <MatchSide state={state} p={0} onPoint={handlePoint} />
             <MatchSide state={state} p={1} onPoint={handlePoint} />
           </div>
