@@ -80,6 +80,21 @@ function AppStyles() {
         }
       }
 
+      /* Sound buttons strip — just below the center controls at the net */
+      .sound-buttons-wrap {
+        position: absolute;
+        top: calc(50% + clamp(24px,4.5vh,36px));
+        left: 0; right: 0;
+        display: flex; justify-content: center; gap: clamp(8px,2vw,14px);
+        z-index: 4; pointer-events: none;
+      }
+      .sound-buttons-wrap button { pointer-events: auto; }
+      @media (orientation: landscape) {
+        .sound-buttons-wrap {
+          top: clamp(44px,7vh,58px);
+        }
+      }
+
       /* Setup screen names: stack in portrait, side by side in landscape */
       .setup-names {
         display: flex; flex-direction: column; gap: 14px;
@@ -203,6 +218,7 @@ function AppFull() {
               onToggle: toggleVoice,
             }}
           />
+          <SoundButtons />
           <VoiceToast heard={voice.lastHeard} />
           <WinnerOverlay
             state={state}
