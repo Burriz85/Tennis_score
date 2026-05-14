@@ -1,4 +1,4 @@
-// tennis-app-fullscreen.jsx — fills the viewport, no phone frame
+// tennis-app-fullscreen.jsx — portrait, no phone frame, fullscreen
 
 function AppFull() {
   const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS);
@@ -10,6 +10,9 @@ function AppFull() {
   const [history, setHistory] = React.useState([]);
   const [state, setState] = React.useState(makeInitialMatch(['Spiller 1', 'Spiller 2'], 5, 0));
 
+  // Keep screen awake during match
+  useWakeLock(screen === 'match' && state.matchWinner == null);
+
   function startMatch(cfg) {
     setLastSetup(cfg);
     setState(makeInitialMatch(cfg.names, cfg.bestOf, cfg.server));
@@ -18,8 +21,20 @@ function AppFull() {
   }
   function handlePoint(p) {
     if (state.matchWinner != null) return;
-    setHistory((h) => [...h, state]);
-    setState((s) => awardPoint(s, p));
+    const prevState = state;
+    const nextState = awardPoint(state, p);
+    setHistory((h) => [...h, prevState]);
+    setState(nextState);
+
+    // Detect transitions for sound effects
+    const gameWon = nextState.games[0] + nextState.games[1] >
+                    prevState.games[0] + prevState.games[1];
+    const setWon  = nextState.completedSets.length > prevState.completedSets.length;
+    const matchWon = nextState.matchWinner != null && prevState.matchWinner == null;
+    // Match sound is fired inside WinnerOverlay; play game/set here.
+    if (matchWon) return;
+    if (setWon) playSetSound();
+    else if (gameWon) playGameSound();
   }
   function handleUndo() {
     if (history.length === 0) return;

@@ -8,6 +8,7 @@ function SetupScreen({ initial, onStart }) {
   const [n2, setN2] = React.useState(initial.names[1]);
   const [bestOf, setBestOf] = React.useState(initial.bestOf);
   const [server, setServer] = React.useState(0);
+  const [showCoin, setShowCoin] = React.useState(false);
 
   const fieldStyle = {
     background: 'rgba(255,255,255,0.08)',
@@ -52,12 +53,13 @@ function SetupScreen({ initial, onStart }) {
     <div style={{
       position: 'absolute', inset: 0,
       display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
+      alignItems: 'center', justifyContent: 'flex-start',
       color: '#fff', fontFamily: 'Inter, system-ui, sans-serif',
-      padding: 'clamp(16px, 4vh, 32px) clamp(20px, 6vw, 36px)',
+      padding: 'clamp(16px, 4vh, 28px) clamp(20px, 6vw, 36px)',
       boxSizing: 'border-box',
-      gap: 'clamp(10px, 2vh, 18px)',
-      overflow: 'auto',
+      gap: 'clamp(10px, 1.8vh, 16px)',
+      overflowY: 'auto',
+      overflowX: 'hidden',
     }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{
@@ -88,9 +90,16 @@ function SetupScreen({ initial, onStart }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65 }}>Server</label>
-          <Segment value={server} onChange={setServer} options={[
+          <Segment value={server} onChange={(v) => {
+            if (v === 'coin') {
+              setShowCoin(true);
+            } else {
+              setServer(v);
+            }
+          }} options={[
             { value: 0, label: n1 || 'Spiller 1' },
             { value: 1, label: n2 || 'Spiller 2' },
+            { value: 'coin', label: '🪙 Mynt' },
           ]} />
         </div>
       </div>
@@ -109,6 +118,13 @@ function SetupScreen({ initial, onStart }) {
         boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
         marginTop: 6,
       }}>Start kamp</button>
+
+      {showCoin && (
+        <CoinToss
+          names={[n1.trim() || 'Spiller 1', n2.trim() || 'Spiller 2']}
+          onDone={(w) => { setServer(w); setShowCoin(false); }}
+        />
+      )}
     </div>
   );
 }
@@ -329,6 +345,9 @@ function CenterControls({ state, onUndo, onReset, canUndo }) {
 // ──────────────────────────────────────────────────────────────
 function WinnerOverlay({ state, onNewMatch, onRematch }) {
   const w = state.matchWinner;
+  React.useEffect(() => {
+    if (w != null) playMatchSound();
+  }, [w]);
   if (w == null) return null;
   const summary = state.completedSets.map(s => `${s[0]}–${s[1]}`).join('  ·  ');
   return (
@@ -342,10 +361,11 @@ function WinnerOverlay({ state, onNewMatch, onRematch }) {
       zIndex: 6, padding: '24px 32px', boxSizing: 'border-box',
       textAlign: 'center',
     }}>
-      <div style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.7, marginBottom: 6 }}>Kamp ferdig</div>
-      <div style={{ fontSize: 26, fontWeight: 700, marginBottom: 4, letterSpacing: '-0.01em' }}>{state.names[w]} vant</div>
-      <div style={{ fontSize: 14, opacity: 0.75, marginBottom: 22, fontVariantNumeric: 'tabular-nums' }}>{summary}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 240 }}>
+      <Confetti active={true} />
+      <div style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.7, marginBottom: 6, zIndex: 8 }}>Kamp ferdig</div>
+      <div style={{ fontSize: 'clamp(22px, 4vh, 30px)', fontWeight: 700, marginBottom: 4, letterSpacing: '-0.01em', zIndex: 8 }}>{state.names[w]} vant!</div>
+      <div style={{ fontSize: 'clamp(12px, 2vh, 14px)', opacity: 0.75, marginBottom: 22, fontVariantNumeric: 'tabular-nums', zIndex: 8 }}>{summary}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 240, zIndex: 8 }}>
         <button onClick={onRematch} style={{
           background: 'linear-gradient(180deg, #d8ff5e 0%, #b6e636 100%)',
           color: '#13260b', border: '3px solid rgba(255,255,255,0.85)',
