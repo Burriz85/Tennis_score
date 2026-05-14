@@ -1,5 +1,5 @@
 // service-worker.js — minimal offline cache for Tennis Score PWA
-const CACHE = 'tennis-score-v2';
+const CACHE = 'tennis-score-v3';
 const FILES = [
   './',
   './index.html',

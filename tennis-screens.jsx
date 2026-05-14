@@ -176,10 +176,9 @@ function MatchSide({ state, p, onPoint }) {
   return (
     <div
       className={`match-side match-side-p${p}`}
-      onClick={() => onPoint(p)}
       style={{
         flex: 1, position: 'relative',
-        color: '#fff', cursor: 'pointer',
+        color: '#fff',
         fontFamily: 'Inter, system-ui, sans-serif',
         overflow: 'hidden',
       }}>
@@ -189,7 +188,6 @@ function MatchSide({ state, p, onPoint }) {
         alignItems: 'center', justifyContent: 'center',
         padding: 'clamp(12px, 3vh, 24px) clamp(10px, 3vw, 24px)',
         boxSizing: 'border-box',
-        pointerEvents: 'none',
       }}>
         {/* name + server + pips */}
         <div style={{
@@ -235,9 +233,9 @@ function MatchSide({ state, p, onPoint }) {
           <div style={{ display: 'flex', gap: 3 }}>{setBoxes}</div>
         </div>
 
-        {/* + button — .plus-btn-wrap and .plus-btn handle position/size per orientation */}
+        {/* + button — only tappable element that awards a point */}
         <div className="plus-btn-wrap">
-          <div className="plus-btn">+</div>
+          <button className="plus-btn" onClick={() => onPoint(p)}>+</button>
         </div>
       </div>
     </div>
@@ -266,29 +264,61 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
       }}>{children}</button>
   );
 
+  const soundBtns = [
+    { label: 'Ute',  play: playOutSound,  say: 'Out',   lang: 'en-GB', color: '#ff5e5e' },
+    { label: 'Let',  play: playLetSound,  say: 'Let',   lang: 'en-GB', color: '#d8ff5e' },
+    { label: 'Feil', play: playFoulSound, say: 'Fault', lang: 'en-GB', color: '#ff9d3a' },
+  ];
+
   return (
     <div className="center-controls-wrap">
+      {/* row 1: undo / status / mic+reset */}
       <div style={{ pointerEvents: 'auto', flexShrink: 0 }}>
         <Btn onClick={onUndo} disabled={!canUndo} title="Angre">↶</Btn>
       </div>
 
-      <div style={{
-        background: 'rgba(0,0,0,0.65)',
-        backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-        border: '1px solid rgba(255,255,255,0.2)',
-        borderRadius: 999,
-        padding: 'clamp(4px, 1vh, 6px) clamp(8px, 2.5vw, 14px)',
-        color: '#fff',
-        fontSize: 'clamp(9px, 1.6vh, 11px)',
-        letterSpacing: '0.08em',
-        textTransform: 'uppercase',
-        fontWeight: 600,
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        maxWidth: 'calc(100% - 120px)',
-        fontFamily: 'Inter, system-ui, sans-serif',
-      }}>{statusLine(state)}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+        <div style={{
+          background: 'rgba(0,0,0,0.65)',
+          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          borderRadius: 999,
+          padding: 'clamp(4px, 1vh, 6px) clamp(8px, 2.5vw, 14px)',
+          color: '#fff',
+          fontSize: 'clamp(9px, 1.6vh, 11px)',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          fontWeight: 600,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          maxWidth: '100%',
+          fontFamily: 'Inter, system-ui, sans-serif',
+          pointerEvents: 'none',
+        }}>{statusLine(state)}</div>
+
+        {/* row 2: sound buttons */}
+        <div style={{ display: 'flex', gap: 'clamp(6px,1.5vw,10px)', pointerEvents: 'auto' }}>
+          {soundBtns.map(({ label, play, say, lang, color }) => (
+            <button key={label}
+              onClick={(e) => { e.stopPropagation(); play(); speak(say, lang); }}
+              style={{
+                background: 'rgba(0,0,0,0.60)',
+                backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+                border: `1.5px solid ${color}88`,
+                color,
+                borderRadius: 999,
+                padding: 'clamp(4px,1vh,6px) clamp(10px,2.5vw,16px)',
+                fontSize: 'clamp(10px,1.6vh,13px)',
+                fontWeight: 700,
+                fontFamily: 'Inter, system-ui, sans-serif',
+                letterSpacing: '0.06em',
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+              }}>{label}</button>
+          ))}
+        </div>
+      </div>
 
       <div style={{ pointerEvents: 'auto', flexShrink: 0, display: 'flex', gap: 6 }}>
         {voiceProps && (
