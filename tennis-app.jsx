@@ -39,6 +39,10 @@ function AppStyles() {
         .score-num-long { font-size: min(14vh, 11vw); }
       }
 
+      /* Player 0 side: rotated in portrait (reads from top of net), normal in landscape */
+      .side-rotated { transform: rotate(180deg); }
+      @media (orientation: landscape) { .side-rotated { transform: none; } }
+
       /* + button wrapper */
       .plus-btn-wrap {
         position: absolute;

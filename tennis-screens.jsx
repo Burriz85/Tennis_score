@@ -173,9 +173,6 @@ function MatchSide({ state, p, onPoint }) {
     );
   }
 
-  // p=0 is always rotated 180° — reads correctly from the opposite side of the phone
-  const rotated = p === 0;
-
   return (
     <div
       onClick={() => onPoint(p)}
@@ -185,9 +182,8 @@ function MatchSide({ state, p, onPoint }) {
         fontFamily: 'Inter, system-ui, sans-serif',
         overflow: 'hidden',
       }}>
-      <div style={{
+      <div className={p === 0 ? 'side-rotated' : undefined} style={{
         position: 'absolute', inset: 0,
-        transform: rotated ? 'rotate(180deg)' : 'none',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         padding: 'clamp(12px, 3vh, 24px) clamp(10px, 3vw, 24px)',
