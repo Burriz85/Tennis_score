@@ -136,4 +136,11 @@ function CourtBackgroundLandscape({ palette = 'hard' }) {
   );
 }
 
-Object.assign(window, { CourtBackground, CourtBackgroundLandscape, PortraitFrame, COURT_PALETTES });
+// Unified component — same React node, just changes internal SVG on prop change (no unmount flash)
+function Court({ palette = 'hard', landscape = false }) {
+  return landscape
+    ? <CourtBackgroundLandscape palette={palette} />
+    : <CourtBackground palette={palette} />;
+}
+
+Object.assign(window, { CourtBackground, CourtBackgroundLandscape, Court, PortraitFrame, COURT_PALETTES });

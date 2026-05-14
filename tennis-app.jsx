@@ -1,16 +1,21 @@
 // tennis-app.jsx — portrait + landscape adaptive app
 
-// Detects orientation and re-renders on change
+// Detects orientation using matchMedia — fires after viewport has settled
 function useOrientation() {
   const [isLandscape, setIsLandscape] = React.useState(
-    () => window.innerWidth > window.innerHeight
+    () => window.matchMedia('(orientation: landscape)').matches
   );
   React.useEffect(() => {
-    const update = () => setIsLandscape(window.innerWidth > window.innerHeight);
-    window.addEventListener('resize', update);
-    // orientationchange fires before dimensions update on some Android browsers
-    window.addEventListener('orientationchange', () => setTimeout(update, 100));
-    return () => window.removeEventListener('resize', update);
+    const mq = window.matchMedia('(orientation: landscape)');
+    const handler = (e) => setIsLandscape(e.matches);
+    // Modern API
+    if (mq.addEventListener) {
+      mq.addEventListener('change', handler);
+      return () => mq.removeEventListener('change', handler);
+    }
+    // Fallback for older Android WebView
+    mq.addListener(handler);
+    return () => mq.removeListener(handler);
   }, []);
   return isLandscape;
 }
@@ -92,12 +97,12 @@ function AppFull() {
     ? { flexDirection: 'row' }
     : { flexDirection: 'column' };
 
+  // Background matches court surround so rotation never shows a black flash
+  const courtBg = { hard: '#2f6b2f', clay: '#2d4a26', grass: '#3f5a26' }[t.court] || '#2d4a26';
+
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#000' }}>
-      {isLandscape
-        ? <CourtBackgroundLandscape palette={t.court} />
-        : <CourtBackground palette={t.court} />
-      }
+    <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: courtBg }}>
+      <Court palette={t.court} landscape={isLandscape} />
 
       {screen === 'setup' && (
         <SetupScreen initial={lastSetup} onStart={startMatch} isLandscape={isLandscape} />
