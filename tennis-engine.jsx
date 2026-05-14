@@ -81,12 +81,7 @@ function awardPoint(state, p) {
     s.pointsInTiebreak += 1;
     // tiebreak serve rotation: first point by tiebreakServer,
     // then every 2 points the server flips.
-    // points played = pointsInTiebreak; new server is:
-    // server flips after odd point counts (1, 3, 5, ...)
-    // We just compute server fresh:
-    // server index = tiebreakServer if pointsInTiebreak ∈ {0,3,4,7,8,...}? Easier:
     // After every odd-numbered total point, swap.
-    // Implement: after each point, if (pointsInTiebreak % 2 === 1) swap server.
     if (s.pointsInTiebreak % 2 === 1) {
       s.server = 1 - s.server;
     }

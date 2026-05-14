@@ -1,6 +1,6 @@
-// tennis-app.jsx — portrait layout, no phone frame, fits viewport
+// tennis-app.jsx — portrait, no phone frame, fullscreen
 
-function App() {
+function AppFull() {
   const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS);
 
   const [screen, setScreen] = React.useState('setup');
@@ -9,21 +9,32 @@ function App() {
   });
   const [history, setHistory] = React.useState([]);
   const [state, setState] = React.useState(makeInitialMatch(['Spiller 1', 'Spiller 2'], 5, 0));
+  const [voiceOn, setVoiceOn] = React.useState(false);
 
-  // Responsive scaling — fit a 420×820 portrait design into viewport.
-  const DESIGN_W = 420, DESIGN_H = 820;
-  const [scale, setScale] = React.useState(1);
-  React.useEffect(() => {
-    function onResize() {
-      const pad = 32;
-      const sx = (window.innerWidth - pad) / DESIGN_W;
-      const sy = (window.innerHeight - pad) / DESIGN_H;
-      setScale(Math.min(1.4, Math.max(0.4, Math.min(sx, sy))));
+  // Keep screen awake during match
+  useWakeLock(screen === 'match' && state.matchWinner == null);
+
+  // ref so voice callback can reach the latest handlePoint
+  const handlePointRef = React.useRef(null);
+
+  // Voice recognition
+  const handleVoiceCommand = React.useCallback((cmd) => {
+    if (cmd && cmd.kind === 'point') {
+      handlePointRef.current && handlePointRef.current(cmd.player);
     }
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
   }, []);
+  const voice = useVoice({
+    enabled: voiceOn && screen === 'match' && state.matchWinner == null,
+    onCommand: handleVoiceCommand,
+  });
+
+  function toggleVoice() {
+    if (!voice.supported) {
+      alert('Stemmegjenkjenning støttes ikke i denne nettleseren. Test på telefonen i Chrome.');
+      return;
+    }
+    setVoiceOn(v => !v);
+  }
 
   function startMatch(cfg) {
     setLastSetup(cfg);
@@ -33,9 +44,21 @@ function App() {
   }
   function handlePoint(p) {
     if (state.matchWinner != null) return;
-    setHistory((h) => [...h, state]);
-    setState((s) => awardPoint(s, p));
+    const prevState = state;
+    const nextState = awardPoint(state, p);
+    setHistory((h) => [...h, prevState]);
+    setState(nextState);
+
+    // Detect transitions for sound effects
+    const gameWon = nextState.games[0] + nextState.games[1] >
+                    prevState.games[0] + prevState.games[1];
+    const setWon  = nextState.completedSets.length > prevState.completedSets.length;
+    const matchWon = nextState.matchWinner != null && prevState.matchWinner == null;
+    if (matchWon) return;
+    if (setWon) playSetSound();
+    else if (gameWon) playGameSound();
   }
+  handlePointRef.current = handlePoint;
   function handleUndo() {
     if (history.length === 0) return;
     const prev = history[history.length - 1];
@@ -52,39 +75,38 @@ function App() {
     setHistory([]);
   }
 
-  const showFrame = t.showFrame !== false; // default true if undefined
-
   return (
-    <div style={{
-      transform: `scale(${scale})`,
-      transformOrigin: 'center center',
-      transition: 'transform 0.15s ease',
-    }}>
-      <PortraitFrame width={DESIGN_W} height={DESIGN_H} showFrame={showFrame}>
-        <CourtBackground palette={t.court} />
-        {screen === 'setup' && (
-          <SetupScreen initial={lastSetup} onStart={startMatch} />
-        )}
-        {screen === 'match' && (
-          <>
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
-              <MatchSide state={state} p={0} onPoint={handlePoint} />
-              <MatchSide state={state} p={1} onPoint={handlePoint} />
-            </div>
-            <CenterControls
-              state={state}
-              onUndo={handleUndo}
-              onReset={handleReset}
-              canUndo={history.length > 0}
-            />
-            <WinnerOverlay
-              state={state}
-              onNewMatch={handleNewMatch}
-              onRematch={handleRematch}
-            />
-          </>
-        )}
-      </PortraitFrame>
+    <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#000' }}>
+      <CourtBackground palette={t.court} />
+      {screen === 'setup' && (
+        <SetupScreen initial={lastSetup} onStart={startMatch} />
+      )}
+      {screen === 'match' && (
+        <>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+            <MatchSide state={state} p={0} onPoint={handlePoint} />
+            <MatchSide state={state} p={1} onPoint={handlePoint} />
+          </div>
+          <CenterControls
+            state={state}
+            onUndo={handleUndo}
+            onReset={handleReset}
+            canUndo={history.length > 0}
+            voiceProps={{
+              enabled: voiceOn,
+              listening: voice.listening,
+              supported: voice.supported,
+              onToggle: toggleVoice,
+            }}
+          />
+          <VoiceToast heard={voice.lastHeard} />
+          <WinnerOverlay
+            state={state}
+            onNewMatch={handleNewMatch}
+            onRematch={handleRematch}
+          />
+        </>
+      )}
 
       <TweaksPanel>
         <TweakSection label="Bane" />
@@ -94,15 +116,9 @@ function App() {
           options={['hard', 'clay', 'grass']}
           onChange={(v) => setTweak('court', v)}
         />
-        <TweakSection label="Visning" />
-        <TweakToggle
-          label="Vis telefonramme"
-          value={showFrame}
-          onChange={(v) => setTweak('showFrame', v)}
-        />
       </TweaksPanel>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('stage')).render(<App />);
+ReactDOM.createRoot(document.getElementById('stage')).render(<AppFull />);

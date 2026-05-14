@@ -2,13 +2,14 @@
 const CACHE = 'tennis-score-v1';
 const FILES = [
   './',
-  './Tennis Score - Fullskjerm.html',
+  './index.html',
   './tweaks-panel.jsx',
   './tennis-court.jsx',
   './tennis-engine.jsx',
   './tennis-screens.jsx',
   './tennis-extras.jsx',
-  './tennis-app-fullscreen.jsx',
+  './tennis-voice.jsx',
+  './tennis-app.jsx',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',

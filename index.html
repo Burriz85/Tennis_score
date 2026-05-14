@@ -35,16 +35,6 @@
 <body>
   <div id="stage"></div>
 
-  <template id="__bundler_thumbnail">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-      <rect width="200" height="200" fill="#1f5fa8"/>
-      <rect x="30" y="40" width="140" height="120" fill="none" stroke="#fff" stroke-width="3"/>
-      <line x1="100" y1="30" x2="100" y2="170" stroke="#fff" stroke-width="4"/>
-      <line x1="30" y1="100" x2="170" y2="100" stroke="#fff" stroke-width="2"/>
-      <circle cx="100" cy="100" r="14" fill="#d8ff5e" stroke="#fff" stroke-width="2"/>
-    </svg>
-  </template>
-
   <script>
     const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
       "court": "clay"
@@ -61,10 +51,9 @@
   <script type="text/babel" src="tennis-extras.jsx"></script>
   <script type="text/babel" src="tennis-voice.jsx"></script>
   <script type="text/babel" src="tennis-screens.jsx"></script>
-  <script type="text/babel" src="tennis-app-fullscreen.jsx"></script>
+  <script type="text/babel" src="tennis-app.jsx"></script>
 
   <script>
-    // Register service worker for PWA / offline support
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('service-worker.js').catch(() => {});

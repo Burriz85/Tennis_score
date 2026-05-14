@@ -41,7 +41,6 @@ function CourtBackground({ palette = 'hard' }) {
       <line x1="250" y1="240" x2="250" y2="760" stroke={lineColor} strokeWidth={lineW} />
       {/* center marks on baselines */}
       <line x1="245" y1="60" x2="255" y2="60" stroke={lineColor} strokeWidth={lineW} />
-      <line x1="245" y1="60" x2="255" y2="60" stroke={lineColor} strokeWidth={lineW} />
       <line x1="245" y1="940" x2="255" y2="940" stroke={lineColor} strokeWidth={lineW} />
       {/* net — horizontal */}
       <rect x="20" y="497" width="460" height="6" fill="#111" opacity="0.85" />
