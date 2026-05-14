@@ -19,7 +19,7 @@ function AppStyles() {
       .center-controls-wrap {
         position: absolute; left: 0; right: 0; z-index: 4;
         top: 50%; transform: translateY(-50%);
-        display: flex; justify-content: space-between; align-items: center;
+        display: flex; justify-content: space-between; align-items: flex-start;
         padding: 0 clamp(8px,2.5vw,16px); gap: 8px;
         pointer-events: none;
       }
@@ -77,21 +77,6 @@ function AppStyles() {
         .plus-btn {
           width: min(13vw,14vh); height: min(13vw,14vh);
           font-size: min(8vw,9vh);
-        }
-      }
-
-      /* Sound buttons strip — just below the center controls at the net */
-      .sound-buttons-wrap {
-        position: absolute;
-        top: calc(50% + clamp(24px,4.5vh,36px));
-        left: 0; right: 0;
-        display: flex; justify-content: center; gap: clamp(8px,2vw,14px);
-        z-index: 4; pointer-events: none;
-      }
-      .sound-buttons-wrap button { pointer-events: auto; }
-      @media (orientation: landscape) {
-        .sound-buttons-wrap {
-          top: clamp(44px,7vh,58px);
         }
       }
 
@@ -218,7 +203,6 @@ function AppFull() {
               onToggle: toggleVoice,
             }}
           />
-          <SoundButtons />
           <VoiceToast heard={voice.lastHeard} />
           <WinnerOverlay
             state={state}
