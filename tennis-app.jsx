@@ -1,7 +1,23 @@
-// tennis-app.jsx — portrait, no phone frame, fullscreen
+// tennis-app.jsx — portrait + landscape adaptive app
+
+// Detects orientation and re-renders on change
+function useOrientation() {
+  const [isLandscape, setIsLandscape] = React.useState(
+    () => window.innerWidth > window.innerHeight
+  );
+  React.useEffect(() => {
+    const update = () => setIsLandscape(window.innerWidth > window.innerHeight);
+    window.addEventListener('resize', update);
+    // orientationchange fires before dimensions update on some Android browsers
+    window.addEventListener('orientationchange', () => setTimeout(update, 100));
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  return isLandscape;
+}
 
 function AppFull() {
   const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS);
+  const isLandscape = useOrientation();
 
   const [screen, setScreen] = React.useState('setup');
   const [lastSetup, setLastSetup] = React.useState({
@@ -11,13 +27,10 @@ function AppFull() {
   const [state, setState] = React.useState(makeInitialMatch(['Spiller 1', 'Spiller 2'], 5, 0));
   const [voiceOn, setVoiceOn] = React.useState(false);
 
-  // Keep screen awake during match
   useWakeLock(screen === 'match' && state.matchWinner == null);
 
-  // ref so voice callback can reach the latest handlePoint
   const handlePointRef = React.useRef(null);
 
-  // Voice recognition
   const handleVoiceCommand = React.useCallback((cmd) => {
     if (cmd && cmd.kind === 'point') {
       handlePointRef.current && handlePointRef.current(cmd.player);
@@ -49,7 +62,6 @@ function AppFull() {
     setHistory((h) => [...h, prevState]);
     setState(nextState);
 
-    // Detect transitions for sound effects
     const gameWon = nextState.games[0] + nextState.games[1] >
                     prevState.games[0] + prevState.games[1];
     const setWon  = nextState.completedSets.length > prevState.completedSets.length;
@@ -59,11 +71,11 @@ function AppFull() {
     else if (gameWon) playGameSound();
   }
   handlePointRef.current = handlePoint;
+
   function handleUndo() {
     if (history.length === 0) return;
-    const prev = history[history.length - 1];
+    setState(history[history.length - 1]);
     setHistory((h) => h.slice(0, -1));
-    setState(prev);
   }
   function handleReset() {
     if (!confirm('Vil du nullstille kampen og gå tilbake til oppsett?')) return;
@@ -75,23 +87,33 @@ function AppFull() {
     setHistory([]);
   }
 
+  // Landscape: players side by side (row), portrait: top/bottom (column)
+  const matchLayout = isLandscape
+    ? { flexDirection: 'row' }
+    : { flexDirection: 'column' };
+
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: '#000' }}>
-      <CourtBackground palette={t.court} />
+      {isLandscape
+        ? <CourtBackgroundLandscape palette={t.court} />
+        : <CourtBackground palette={t.court} />
+      }
+
       {screen === 'setup' && (
-        <SetupScreen initial={lastSetup} onStart={startMatch} />
+        <SetupScreen initial={lastSetup} onStart={startMatch} isLandscape={isLandscape} />
       )}
       {screen === 'match' && (
         <>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
-            <MatchSide state={state} p={0} onPoint={handlePoint} />
-            <MatchSide state={state} p={1} onPoint={handlePoint} />
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', ...matchLayout }}>
+            <MatchSide state={state} p={0} onPoint={handlePoint} isLandscape={isLandscape} />
+            <MatchSide state={state} p={1} onPoint={handlePoint} isLandscape={isLandscape} />
           </div>
           <CenterControls
             state={state}
             onUndo={handleUndo}
             onReset={handleReset}
             canUndo={history.length > 0}
+            isLandscape={isLandscape}
             voiceProps={{
               enabled: voiceOn,
               listening: voice.listening,

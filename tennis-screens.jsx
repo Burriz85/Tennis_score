@@ -1,9 +1,9 @@
-// tennis-screens.jsx — setup, match, winner overlay (PORTRAIT layout)
+// tennis-screens.jsx — setup, match, winner overlay (portrait + landscape)
 
 // ──────────────────────────────────────────────────────────────
 // Setup screen
 // ──────────────────────────────────────────────────────────────
-function SetupScreen({ initial, onStart }) {
+function SetupScreen({ initial, onStart, isLandscape }) {
   const [n1, setN1] = React.useState(initial.names[0]);
   const [n2, setN2] = React.useState(initial.names[1]);
   const [bestOf, setBestOf] = React.useState(initial.bestOf);
@@ -38,17 +38,93 @@ function SetupScreen({ initial, onStart }) {
           background: value === o.value ? '#d8ff5e' : 'transparent',
           color: value === o.value ? '#13260b' : '#fff',
           border: 'none',
-          padding: '8px 18px',
+          padding: '8px 14px',
           borderRadius: 999,
           fontSize: 13,
           fontWeight: 600,
           cursor: 'pointer',
-          minWidth: 90,
+          minWidth: isLandscape ? 70 : 90,
         }}>{o.label}</button>
       ))}
     </div>
   );
 
+  if (isLandscape) {
+    // ── Landscape setup: two-column layout ──
+    return (
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        color: '#fff', fontFamily: 'Inter, system-ui, sans-serif',
+        padding: '12px 24px',
+        boxSizing: 'border-box',
+        gap: 12,
+        overflowY: 'auto',
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.7, marginBottom: 2 }}>Tennis Score</div>
+          <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.01em' }}>Ny kamp</div>
+        </div>
+
+        {/* Player names side by side */}
+        <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: 560 }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, display: 'block', marginBottom: 4, textAlign: 'center' }}>Spiller 1 (venstre)</label>
+            <input value={n1} onChange={(e) => setN1(e.target.value)} maxLength={14} style={{ ...fieldStyle, fontSize: 15, padding: '10px 12px' }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, display: 'block', marginBottom: 4, textAlign: 'center' }}>Spiller 2 (høyre)</label>
+            <input value={n2} onChange={(e) => setN2(e.target.value)} maxLength={14} style={{ ...fieldStyle, fontSize: 15, padding: '10px 12px' }} />
+          </div>
+        </div>
+
+        {/* Options row */}
+        <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65 }}>Kamp</label>
+            <Segment value={bestOf} onChange={setBestOf} options={[
+              { value: 3, label: 'Best av 3' },
+              { value: 5, label: 'Best av 5' },
+            ]} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65 }}>Server</label>
+            <Segment value={server} onChange={(v) => {
+              if (v === 'coin') { setShowCoin(true); } else { setServer(v); }
+            }} options={[
+              { value: 0, label: n1 || 'Spiller 1' },
+              { value: 1, label: n2 || 'Spiller 2' },
+              { value: 'coin', label: '🪙 Mynt' },
+            ]} />
+          </div>
+        </div>
+
+        <button onClick={() => onStart({
+          names: [n1.trim() || 'Spiller 1', n2.trim() || 'Spiller 2'],
+          bestOf, server,
+        })} style={{
+          background: 'linear-gradient(180deg, #d8ff5e 0%, #b6e636 100%)',
+          color: '#13260b',
+          border: '3px solid rgba(255,255,255,0.85)',
+          padding: '12px 44px',
+          fontSize: 16, fontWeight: 700,
+          borderRadius: 999,
+          cursor: 'pointer',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+        }}>Start kamp</button>
+
+        {showCoin && (
+          <CoinToss
+            names={[n1.trim() || 'Spiller 1', n2.trim() || 'Spiller 2']}
+            onDone={(w) => { setServer(w); setShowCoin(false); }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // ── Portrait setup ──
   return (
     <div style={{
       position: 'absolute', inset: 0,
@@ -62,10 +138,7 @@ function SetupScreen({ initial, onStart }) {
       overflowX: 'hidden',
     }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{
-          fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase',
-          opacity: 0.7, marginBottom: 4,
-        }}>Tennis Score</div>
+        <div style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.7, marginBottom: 4 }}>Tennis Score</div>
         <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.01em' }}>Ny kamp</div>
       </div>
 
@@ -91,11 +164,7 @@ function SetupScreen({ initial, onStart }) {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65 }}>Server</label>
           <Segment value={server} onChange={(v) => {
-            if (v === 'coin') {
-              setShowCoin(true);
-            } else {
-              setServer(v);
-            }
+            if (v === 'coin') { setShowCoin(true); } else { setServer(v); }
           }} options={[
             { value: 0, label: n1 || 'Spiller 1' },
             { value: 1, label: n2 || 'Spiller 2' },
@@ -130,19 +199,17 @@ function SetupScreen({ initial, onStart }) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// One side of the match — TOP (p=0) or BOTTOM (p=1) half.
-// Top side is visually rotated 180° so the score reads correctly
-// when the phone is held normally between two players facing
-// each other across the screen.
+// One side of the match.
+// Portrait: p=0 top (rotated 180°), p=1 bottom.
+// Landscape: p=0 left (rotated 180°), p=1 right.
 // ──────────────────────────────────────────────────────────────
-function MatchSide({ state, p, onPoint }) {
+function MatchSide({ state, p, onPoint, isLandscape }) {
   const [pts1, pts2] = formatPoints(state);
   const myPts = p === 0 ? pts1 : pts2;
   const isServer = state.server === p;
   const setsWon = state.setsWon[p];
   const setsToWin = state.setsToWin;
 
-  // sets boxes (completed + current)
   const setBoxStyle = (won, current) => ({
     minWidth: 'clamp(22px, 4vw, 28px)',
     padding: '2px clamp(4px, 1vw, 6px)',
@@ -158,35 +225,48 @@ function MatchSide({ state, p, onPoint }) {
     fontWeight: 700, textAlign: 'center',
     fontVariantNumeric: 'tabular-nums',
   });
+
   const setBoxes = state.completedSets.map((s, i) => {
     const my = s[p], theirs = s[1 - p];
-    const won = my > theirs;
-    return (
-      <div key={i} style={setBoxStyle(won, false)}>{my}</div>
-    );
+    return <div key={i} style={setBoxStyle(my > theirs, false)}>{my}</div>;
   });
-  setBoxes.push(
-    <div key="cur" style={setBoxStyle(false, true)}>{state.games[p]}</div>
-  );
+  setBoxes.push(<div key="cur" style={setBoxStyle(false, true)}>{state.games[p]}</div>);
 
-  // sets-won pips
   const pips = [];
   for (let i = 0; i < setsToWin; i++) {
-    const won = i < setsWon;
     pips.push(
       <div key={i} style={{
         width: 'clamp(7px, 1.2vh, 9px)', height: 'clamp(7px, 1.2vh, 9px)',
         borderRadius: '50%',
-        background: won ? '#fff' : 'transparent',
+        background: i < setsWon ? '#fff' : 'transparent',
         border: '1.5px solid rgba(255,255,255,0.7)',
         flexShrink: 0,
       }} />
     );
   }
 
-  // Top player: rotate the content 180° so they read it correctly
-  // from the opposite side of the phone. Bottom player reads normal.
   const rotated = p === 0;
+
+  // Score font size: landscape has less height, so use vw-biased sizing
+  const scoreSize = isLandscape
+    ? (myPts.length >= 3 ? 'min(14vh, 11vw)' : 'min(20vh, 16vw)')
+    : (myPts.length >= 3 ? 'min(20vh, 28vw)' : 'min(26vh, 40vw)');
+
+  // + button: portrait = bottom edge, landscape = net edge (left in unrotated coords → right after rotate for p=0)
+  const btnWrapStyle = isLandscape ? {
+    position: 'absolute',
+    left: 'clamp(10px, 2.5vw, 20px)',
+    top: 0, bottom: 0,
+    display: 'flex', alignItems: 'center',
+  } : {
+    position: 'absolute',
+    bottom: 'clamp(12px, 3vh, 22px)', left: 0, right: 0,
+    display: 'flex', justifyContent: 'center',
+  };
+
+  const btnSize = isLandscape
+    ? 'min(13vw, 14vh)'
+    : 'min(11vh, 18vw)';
 
   return (
     <div
@@ -202,7 +282,9 @@ function MatchSide({ state, p, onPoint }) {
         transform: rotated ? 'rotate(180deg)' : 'none',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        padding: 'clamp(12px, 3vh, 24px) clamp(10px, 3vw, 24px)',
+        padding: isLandscape
+          ? 'clamp(10px, 2vh, 18px) clamp(12px, 5vw, 32px)'
+          : 'clamp(12px, 3vh, 24px) clamp(10px, 3vw, 24px)',
         boxSizing: 'border-box',
         pointerEvents: 'none',
       }}>
@@ -231,14 +313,12 @@ function MatchSide({ state, p, onPoint }) {
 
         {/* big score */}
         <div style={{
-          fontSize: myPts.length >= 3
-            ? 'min(20vh, 28vw)'
-            : 'min(26vh, 40vw)',
+          fontSize: scoreSize,
           fontWeight: 700, lineHeight: 1, letterSpacing: '-0.04em',
           textShadow: '0 4px 24px rgba(0,0,0,0.4)',
           fontVariantNumeric: 'tabular-nums',
-          marginTop: 'clamp(8px, 2vh, 14px)',
-          marginBottom: 'clamp(8px, 1.5vh, 12px)',
+          marginTop: 'clamp(6px, 1.5vh, 12px)',
+          marginBottom: 'clamp(6px, 1.2vh, 10px)',
         }}>{myPts}</div>
 
         {/* set row */}
@@ -251,21 +331,18 @@ function MatchSide({ state, p, onPoint }) {
           <div style={{ display: 'flex', gap: 3 }}>{setBoxes}</div>
         </div>
 
-        {/* tap hint button — near the net edge of this half */}
-        <div style={{
-          position: 'absolute',
-          bottom: 'clamp(12px, 3vh, 22px)', left: 0, right: 0,
-          display: 'flex', justifyContent: 'center',
-        }}>
+        {/* tap hint + button */}
+        <div style={btnWrapStyle}>
           <div style={{
-            width: 'min(11vh, 18vw)', height: 'min(11vh, 18vw)',
+            width: btnSize, height: btnSize,
             minWidth: 48, minHeight: 48,
             maxWidth: 80, maxHeight: 80,
             borderRadius: '50%',
             background: 'linear-gradient(180deg, #d8ff5e 0%, #b6e636 100%)',
             color: '#13260b',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 'min(7vh, 11vw)', fontWeight: 300, lineHeight: 1,
+            fontSize: isLandscape ? 'min(8vw, 9vh)' : 'min(7vh, 11vw)',
+            fontWeight: 300, lineHeight: 1,
             boxShadow: '0 8px 22px rgba(0,0,0,0.4), inset 0 -3px 0 rgba(0,0,0,0.12)',
             border: '3px solid rgba(255,255,255,0.85)',
           }}>+</div>
@@ -276,10 +353,10 @@ function MatchSide({ state, p, onPoint }) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Center controls (status pill + undo/reset) — sits ON the net.
-// Horizontal layout for portrait.
+// Center controls — portrait: horizontal bar at y=50% (net).
+//                   landscape: horizontal bar at top of screen.
 // ──────────────────────────────────────────────────────────────
-function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
+function CenterControls({ state, onUndo, onReset, canUndo, voiceProps, isLandscape }) {
   const Btn = ({ onClick, children, title, disabled }) => (
     <button
       onClick={(e) => { e.stopPropagation(); onClick(); }}
@@ -297,23 +374,35 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
         padding: 0,
       }}>{children}</button>
   );
+
+  const containerStyle = isLandscape ? {
+    // Top bar in landscape — visible above both halves
+    position: 'absolute',
+    left: 0, right: 0, top: 0,
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '8px clamp(8px, 2.5vw, 16px)',
+    gap: 8,
+    pointerEvents: 'none',
+    zIndex: 4,
+    background: 'linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 100%)',
+  } : {
+    // Net line in portrait
+    position: 'absolute',
+    left: 0, right: 0, top: '50%',
+    transform: 'translateY(-50%)',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '0 clamp(8px, 2.5vw, 16px)',
+    gap: 8,
+    pointerEvents: 'none',
+    zIndex: 4,
+  };
+
   return (
-    <div style={{
-      position: 'absolute',
-      left: 0, right: 0, top: '50%',
-      transform: 'translateY(-50%)',
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      padding: '0 clamp(8px, 2.5vw, 16px)',
-      gap: 8,
-      pointerEvents: 'none',
-      zIndex: 4,
-    }}>
-      {/* left: undo */}
+    <div style={containerStyle}>
       <div style={{ pointerEvents: 'auto', flexShrink: 0 }}>
         <Btn onClick={onUndo} disabled={!canUndo} title="Angre">↶</Btn>
       </div>
 
-      {/* center: status pill */}
       <div style={{
         background: 'rgba(0,0,0,0.65)',
         backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
@@ -332,7 +421,6 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
         fontFamily: 'Inter, system-ui, sans-serif',
       }}>{statusLine(state)}</div>
 
-      {/* right: reset + mic */}
       <div style={{ pointerEvents: 'auto', flexShrink: 0, display: 'flex', gap: 6 }}>
         {voiceProps && (
           <MicButton
