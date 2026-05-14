@@ -1,9 +1,10 @@
-// tennis-screens.jsx — setup, match, winner overlay (portrait + landscape)
+// tennis-screens.jsx — setup, match, winner overlay
+// Orientation handled by CSS classes defined in tennis-app.jsx (AppStyles)
 
 // ──────────────────────────────────────────────────────────────
 // Setup screen
 // ──────────────────────────────────────────────────────────────
-function SetupScreen({ initial, onStart, isLandscape }) {
+function SetupScreen({ initial, onStart }) {
   const [n1, setN1] = React.useState(initial.names[0]);
   const [n2, setN2] = React.useState(initial.names[1]);
   const [bestOf, setBestOf] = React.useState(initial.bestOf);
@@ -43,97 +44,21 @@ function SetupScreen({ initial, onStart, isLandscape }) {
           fontSize: 13,
           fontWeight: 600,
           cursor: 'pointer',
-          minWidth: isLandscape ? 70 : 90,
+          minWidth: 80,
         }}>{o.label}</button>
       ))}
     </div>
   );
 
-  if (isLandscape) {
-    // ── Landscape setup: two-column layout ──
-    return (
-      <div style={{
-        position: 'absolute', inset: 0,
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        color: '#fff', fontFamily: 'Inter, system-ui, sans-serif',
-        padding: '12px 24px',
-        boxSizing: 'border-box',
-        gap: 12,
-        overflowY: 'auto',
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.7, marginBottom: 2 }}>Tennis Score</div>
-          <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.01em' }}>Ny kamp</div>
-        </div>
-
-        {/* Player names side by side */}
-        <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: 560 }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, display: 'block', marginBottom: 4, textAlign: 'center' }}>Spiller 1 (venstre)</label>
-            <input value={n1} onChange={(e) => setN1(e.target.value)} maxLength={14} style={{ ...fieldStyle, fontSize: 15, padding: '10px 12px' }} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, display: 'block', marginBottom: 4, textAlign: 'center' }}>Spiller 2 (høyre)</label>
-            <input value={n2} onChange={(e) => setN2(e.target.value)} maxLength={14} style={{ ...fieldStyle, fontSize: 15, padding: '10px 12px' }} />
-          </div>
-        </div>
-
-        {/* Options row */}
-        <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65 }}>Kamp</label>
-            <Segment value={bestOf} onChange={setBestOf} options={[
-              { value: 3, label: 'Best av 3' },
-              { value: 5, label: 'Best av 5' },
-            ]} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65 }}>Server</label>
-            <Segment value={server} onChange={(v) => {
-              if (v === 'coin') { setShowCoin(true); } else { setServer(v); }
-            }} options={[
-              { value: 0, label: n1 || 'Spiller 1' },
-              { value: 1, label: n2 || 'Spiller 2' },
-              { value: 'coin', label: '🪙 Mynt' },
-            ]} />
-          </div>
-        </div>
-
-        <button onClick={() => onStart({
-          names: [n1.trim() || 'Spiller 1', n2.trim() || 'Spiller 2'],
-          bestOf, server,
-        })} style={{
-          background: 'linear-gradient(180deg, #d8ff5e 0%, #b6e636 100%)',
-          color: '#13260b',
-          border: '3px solid rgba(255,255,255,0.85)',
-          padding: '12px 44px',
-          fontSize: 16, fontWeight: 700,
-          borderRadius: 999,
-          cursor: 'pointer',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-        }}>Start kamp</button>
-
-        {showCoin && (
-          <CoinToss
-            names={[n1.trim() || 'Spiller 1', n2.trim() || 'Spiller 2']}
-            onDone={(w) => { setServer(w); setShowCoin(false); }}
-          />
-        )}
-      </div>
-    );
-  }
-
-  // ── Portrait setup ──
   return (
     <div style={{
       position: 'absolute', inset: 0,
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'flex-start',
       color: '#fff', fontFamily: 'Inter, system-ui, sans-serif',
-      padding: 'clamp(16px, 4vh, 28px) clamp(20px, 6vw, 36px)',
+      padding: 'clamp(12px, 3vh, 24px) clamp(16px, 5vw, 32px)',
       boxSizing: 'border-box',
-      gap: 'clamp(10px, 1.8vh, 16px)',
+      gap: 'clamp(8px, 1.6vh, 14px)',
       overflowY: 'auto',
       overflowX: 'hidden',
     }}>
@@ -142,18 +67,20 @@ function SetupScreen({ initial, onStart, isLandscape }) {
         <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.01em' }}>Ny kamp</div>
       </div>
 
-      <div style={{ width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div>
-          <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, display: 'block', marginBottom: 6, textAlign: 'center' }}>Spiller 1 (øverst)</label>
+      {/* .setup-names: column in portrait, row in landscape (CSS) */}
+      <div className="setup-names">
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, display: 'block', marginBottom: 6, textAlign: 'center' }}>Spiller 1</label>
           <input value={n1} onChange={(e) => setN1(e.target.value)} maxLength={14} style={fieldStyle} />
         </div>
-        <div>
-          <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, display: 'block', marginBottom: 6, textAlign: 'center' }}>Spiller 2 (nederst)</label>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, display: 'block', marginBottom: 6, textAlign: 'center' }}>Spiller 2</label>
           <input value={n2} onChange={(e) => setN2(e.target.value)} maxLength={14} style={fieldStyle} />
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center' }}>
+      {/* .setup-options: column in portrait, row in landscape (CSS) */}
+      <div className="setup-options">
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65 }}>Kamp</label>
           <Segment value={bestOf} onChange={setBestOf} options={[
@@ -185,7 +112,7 @@ function SetupScreen({ initial, onStart, isLandscape }) {
         borderRadius: 999,
         cursor: 'pointer',
         boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-        marginTop: 6,
+        marginTop: 4,
       }}>Start kamp</button>
 
       {showCoin && (
@@ -199,11 +126,12 @@ function SetupScreen({ initial, onStart, isLandscape }) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// One side of the match.
+// One half of the match court.
 // Portrait: p=0 top (rotated 180°), p=1 bottom.
 // Landscape: p=0 left (rotated 180°), p=1 right.
+// Layout switching is CSS-driven (.match-halves flex-direction).
 // ──────────────────────────────────────────────────────────────
-function MatchSide({ state, p, onPoint, isLandscape }) {
+function MatchSide({ state, p, onPoint }) {
   const [pts1, pts2] = formatPoints(state);
   const myPts = p === 0 ? pts1 : pts2;
   const isServer = state.server === p;
@@ -245,28 +173,8 @@ function MatchSide({ state, p, onPoint, isLandscape }) {
     );
   }
 
+  // p=0 is always rotated 180° — reads correctly from the opposite side of the phone
   const rotated = p === 0;
-
-  // Score font size: landscape has less height, so use vw-biased sizing
-  const scoreSize = isLandscape
-    ? (myPts.length >= 3 ? 'min(14vh, 11vw)' : 'min(20vh, 16vw)')
-    : (myPts.length >= 3 ? 'min(20vh, 28vw)' : 'min(26vh, 40vw)');
-
-  // + button: portrait = bottom edge, landscape = net edge (left in unrotated coords → right after rotate for p=0)
-  const btnWrapStyle = isLandscape ? {
-    position: 'absolute',
-    left: 'clamp(10px, 2.5vw, 20px)',
-    top: 0, bottom: 0,
-    display: 'flex', alignItems: 'center',
-  } : {
-    position: 'absolute',
-    bottom: 'clamp(12px, 3vh, 22px)', left: 0, right: 0,
-    display: 'flex', justifyContent: 'center',
-  };
-
-  const btnSize = isLandscape
-    ? 'min(13vw, 14vh)'
-    : 'min(11vh, 18vw)';
 
   return (
     <div
@@ -282,9 +190,7 @@ function MatchSide({ state, p, onPoint, isLandscape }) {
         transform: rotated ? 'rotate(180deg)' : 'none',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        padding: isLandscape
-          ? 'clamp(10px, 2vh, 18px) clamp(12px, 5vw, 32px)'
-          : 'clamp(12px, 3vh, 24px) clamp(10px, 3vw, 24px)',
+        padding: 'clamp(12px, 3vh, 24px) clamp(10px, 3vw, 24px)',
         boxSizing: 'border-box',
         pointerEvents: 'none',
       }}>
@@ -311,15 +217,16 @@ function MatchSide({ state, p, onPoint, isLandscape }) {
           <div style={{ display: 'flex', gap: 'clamp(3px, 0.6vw, 4px)' }}>{pips}</div>
         </div>
 
-        {/* big score */}
-        <div style={{
-          fontSize: scoreSize,
-          fontWeight: 700, lineHeight: 1, letterSpacing: '-0.04em',
-          textShadow: '0 4px 24px rgba(0,0,0,0.4)',
-          fontVariantNumeric: 'tabular-nums',
-          marginTop: 'clamp(6px, 1.5vh, 12px)',
-          marginBottom: 'clamp(6px, 1.2vh, 10px)',
-        }}>{myPts}</div>
+        {/* big score — CSS classes handle font-size per orientation */}
+        <div
+          className={myPts.length >= 3 ? 'score-num-long' : 'score-num'}
+          style={{
+            fontWeight: 700, lineHeight: 1, letterSpacing: '-0.04em',
+            textShadow: '0 4px 24px rgba(0,0,0,0.4)',
+            fontVariantNumeric: 'tabular-nums',
+            marginTop: 'clamp(8px, 2vh, 14px)',
+            marginBottom: 'clamp(8px, 1.5vh, 12px)',
+          }}>{myPts}</div>
 
         {/* set row */}
         <div style={{
@@ -331,21 +238,9 @@ function MatchSide({ state, p, onPoint, isLandscape }) {
           <div style={{ display: 'flex', gap: 3 }}>{setBoxes}</div>
         </div>
 
-        {/* tap hint + button */}
-        <div style={btnWrapStyle}>
-          <div style={{
-            width: btnSize, height: btnSize,
-            minWidth: 48, minHeight: 48,
-            maxWidth: 80, maxHeight: 80,
-            borderRadius: '50%',
-            background: 'linear-gradient(180deg, #d8ff5e 0%, #b6e636 100%)',
-            color: '#13260b',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: isLandscape ? 'min(8vw, 9vh)' : 'min(7vh, 11vw)',
-            fontWeight: 300, lineHeight: 1,
-            boxShadow: '0 8px 22px rgba(0,0,0,0.4), inset 0 -3px 0 rgba(0,0,0,0.12)',
-            border: '3px solid rgba(255,255,255,0.85)',
-          }}>+</div>
+        {/* + button — .plus-btn-wrap and .plus-btn handle position/size per orientation */}
+        <div className="plus-btn-wrap">
+          <div className="plus-btn">+</div>
         </div>
       </div>
     </div>
@@ -353,10 +248,9 @@ function MatchSide({ state, p, onPoint, isLandscape }) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Center controls — portrait: horizontal bar at y=50% (net).
-//                   landscape: horizontal bar at top of screen.
+// Center controls — .center-controls-wrap positions via CSS
 // ──────────────────────────────────────────────────────────────
-function CenterControls({ state, onUndo, onReset, canUndo, voiceProps, isLandscape }) {
+function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
   const Btn = ({ onClick, children, title, disabled }) => (
     <button
       onClick={(e) => { e.stopPropagation(); onClick(); }}
@@ -375,30 +269,8 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps, isLandsca
       }}>{children}</button>
   );
 
-  const containerStyle = isLandscape ? {
-    // Top bar in landscape — visible above both halves
-    position: 'absolute',
-    left: 0, right: 0, top: 0,
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '8px clamp(8px, 2.5vw, 16px)',
-    gap: 8,
-    pointerEvents: 'none',
-    zIndex: 4,
-    background: 'linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 100%)',
-  } : {
-    // Net line in portrait
-    position: 'absolute',
-    left: 0, right: 0, top: '50%',
-    transform: 'translateY(-50%)',
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '0 clamp(8px, 2.5vw, 16px)',
-    gap: 8,
-    pointerEvents: 'none',
-    zIndex: 4,
-  };
-
   return (
-    <div style={containerStyle}>
+    <div className="center-controls-wrap">
       <div style={{ pointerEvents: 'auto', flexShrink: 0 }}>
         <Btn onClick={onUndo} disabled={!canUndo} title="Angre">↶</Btn>
       </div>
@@ -417,7 +289,7 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps, isLandsca
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
-        maxWidth: 'calc(100% - 100px)',
+        maxWidth: 'calc(100% - 120px)',
         fontFamily: 'Inter, system-ui, sans-serif',
       }}>{statusLine(state)}</div>
 

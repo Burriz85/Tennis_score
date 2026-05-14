@@ -1,28 +1,99 @@
-// tennis-app.jsx — portrait + landscape adaptive app
+// tennis-app.jsx — orientation handled purely by CSS (no JS re-render on rotate)
 
-// Detects orientation using matchMedia — fires after viewport has settled
-function useOrientation() {
-  const [isLandscape, setIsLandscape] = React.useState(
-    () => window.matchMedia('(orientation: landscape)').matches
+function AppStyles() {
+  return (
+    <style>{`
+      /* Courts: show portrait in portrait, landscape in landscape */
+      .court-portrait { position: absolute; inset: 0; }
+      .court-landscape { position: absolute; inset: 0; display: none; }
+      @media (orientation: landscape) {
+        .court-portrait { display: none; }
+        .court-landscape { display: block; }
+      }
+
+      /* Match halves: stack vertically in portrait, side by side in landscape */
+      .match-halves { position: absolute; inset: 0; display: flex; flex-direction: column; }
+      @media (orientation: landscape) { .match-halves { flex-direction: row; } }
+
+      /* Center controls: at the net in portrait, top bar in landscape */
+      .center-controls-wrap {
+        position: absolute; left: 0; right: 0; z-index: 4;
+        top: 50%; transform: translateY(-50%);
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0 clamp(8px,2.5vw,16px); gap: 8px;
+        pointer-events: none;
+      }
+      @media (orientation: landscape) {
+        .center-controls-wrap {
+          top: 0; transform: none;
+          padding: 8px clamp(8px,2.5vw,16px);
+          background: linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 100%);
+        }
+      }
+
+      /* Score number */
+      .score-num      { font-size: min(26vh, 40vw); }
+      .score-num-long { font-size: min(20vh, 28vw); }
+      @media (orientation: landscape) {
+        .score-num      { font-size: min(20vh, 16vw); }
+        .score-num-long { font-size: min(14vh, 11vw); }
+      }
+
+      /* + button wrapper */
+      .plus-btn-wrap {
+        position: absolute;
+        bottom: clamp(12px,3vh,22px); left: 0; right: 0;
+        display: flex; justify-content: center;
+      }
+      @media (orientation: landscape) {
+        .plus-btn-wrap {
+          bottom: 0; left: clamp(10px,2.5vw,20px); right: auto;
+          justify-content: flex-start; align-items: center;
+        }
+      }
+
+      /* + button */
+      .plus-btn {
+        width: min(11vh,18vw); height: min(11vh,18vw);
+        min-width: 48px; min-height: 48px;
+        max-width: 80px; max-height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(180deg, #d8ff5e 0%, #b6e636 100%);
+        color: #13260b;
+        display: flex; align-items: center; justify-content: center;
+        font-size: min(7vh,11vw); font-weight: 300; line-height: 1;
+        box-shadow: 0 8px 22px rgba(0,0,0,0.4), inset 0 -3px 0 rgba(0,0,0,0.12);
+        border: 3px solid rgba(255,255,255,0.85);
+      }
+      @media (orientation: landscape) {
+        .plus-btn {
+          width: min(13vw,14vh); height: min(13vw,14vh);
+          font-size: min(8vw,9vh);
+        }
+      }
+
+      /* Setup screen names: stack in portrait, side by side in landscape */
+      .setup-names {
+        display: flex; flex-direction: column; gap: 14px;
+        width: 100%; max-width: 340px;
+      }
+      @media (orientation: landscape) {
+        .setup-names { flex-direction: row; max-width: 560px; }
+      }
+
+      /* Setup options row */
+      .setup-options {
+        display: flex; flex-direction: column; gap: 14px; align-items: center;
+      }
+      @media (orientation: landscape) {
+        .setup-options { flex-direction: row; gap: 24px; }
+      }
+    `}</style>
   );
-  React.useEffect(() => {
-    const mq = window.matchMedia('(orientation: landscape)');
-    const handler = (e) => setIsLandscape(e.matches);
-    // Modern API
-    if (mq.addEventListener) {
-      mq.addEventListener('change', handler);
-      return () => mq.removeEventListener('change', handler);
-    }
-    // Fallback for older Android WebView
-    mq.addListener(handler);
-    return () => mq.removeListener(handler);
-  }, []);
-  return isLandscape;
 }
 
 function AppFull() {
   const [t, setTweak] = useTweaks(window.TWEAK_DEFAULTS);
-  const isLandscape = useOrientation();
 
   const [screen, setScreen] = React.useState('setup');
   const [lastSetup, setLastSetup] = React.useState({
@@ -92,33 +163,31 @@ function AppFull() {
     setHistory([]);
   }
 
-  // Landscape: players side by side (row), portrait: top/bottom (column)
-  const matchLayout = isLandscape
-    ? { flexDirection: 'row' }
-    : { flexDirection: 'column' };
-
-  // Background matches court surround so rotation never shows a black flash
+  // Match court surround colour so there is never a black flash during rotation
   const courtBg = { hard: '#2f6b2f', clay: '#2d4a26', grass: '#3f5a26' }[t.court] || '#2d4a26';
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: courtBg }}>
-      <Court palette={t.court} landscape={isLandscape} />
+      <AppStyles />
+
+      {/* Both courts stay in the DOM — CSS media query shows the right one */}
+      <div className="court-portrait"><CourtBackground palette={t.court} /></div>
+      <div className="court-landscape"><CourtBackgroundLandscape palette={t.court} /></div>
 
       {screen === 'setup' && (
-        <SetupScreen initial={lastSetup} onStart={startMatch} isLandscape={isLandscape} />
+        <SetupScreen initial={lastSetup} onStart={startMatch} />
       )}
       {screen === 'match' && (
         <>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', ...matchLayout }}>
-            <MatchSide state={state} p={0} onPoint={handlePoint} isLandscape={isLandscape} />
-            <MatchSide state={state} p={1} onPoint={handlePoint} isLandscape={isLandscape} />
+          <div className="match-halves">
+            <MatchSide state={state} p={0} onPoint={handlePoint} />
+            <MatchSide state={state} p={1} onPoint={handlePoint} />
           </div>
           <CenterControls
             state={state}
             onUndo={handleUndo}
             onReset={handleReset}
             canUndo={history.length > 0}
-            isLandscape={isLandscape}
             voiceProps={{
               enabled: voiceOn,
               listening: voice.listening,
