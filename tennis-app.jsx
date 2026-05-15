@@ -3,23 +3,23 @@
 function AppStyles() {
   return (
     <style>{`
-      /* Courts: show portrait in portrait, landscape in landscape */
-      .court-portrait { position: absolute; inset: 0; }
+      /* Courts */
+      .court-portrait  { position: absolute; inset: 0; }
       .court-landscape { position: absolute; inset: 0; display: none; }
       @media (orientation: landscape) {
-        .court-portrait { display: none; }
+        .court-portrait  { display: none; }
         .court-landscape { display: block; }
       }
 
-      /* Match halves: stack vertically in portrait, side by side in landscape */
+      /* Match halves */
       .match-halves { position: absolute; inset: 0; display: flex; flex-direction: column; }
       @media (orientation: landscape) { .match-halves { flex-direction: row; } }
 
-      /* Center controls: at the net in portrait, top bar in landscape */
+      /* Center controls */
       .center-controls-wrap {
         position: absolute; left: 0; right: 0; z-index: 4;
         top: 50%; transform: translateY(-50%);
-        display: flex; justify-content: space-between; align-items: flex-start;
+        display: flex; justify-content: space-between; align-items: center;
         padding: 0 clamp(8px,2.5vw,16px); gap: 8px;
         pointer-events: none;
       }
@@ -39,7 +39,7 @@ function AppStyles() {
         .score-num-long { font-size: min(14vh, 11vw); }
       }
 
-      /* Player 0 side: rotated in portrait (reads from top of net), normal in landscape */
+      /* Player 0: rotated in portrait, normal in landscape */
       .side-rotated { transform: rotate(180deg); }
       @media (orientation: landscape) { .side-rotated { transform: none; } }
 
@@ -55,47 +55,62 @@ function AppStyles() {
           justify-content: flex-start; align-items: center;
         }
         .match-side-p1 .plus-btn-wrap {
-          left: auto; right: clamp(10px,2.5vw,20px);
-          justify-content: flex-end;
+          left: auto; right: clamp(10px,2.5vw,20px); justify-content: flex-end;
         }
       }
 
       /* + button */
       .plus-btn {
         width: min(11vh,18vw); height: min(11vh,18vw);
-        min-width: 48px; min-height: 48px;
-        max-width: 80px; max-height: 80px;
+        min-width: 48px; min-height: 48px; max-width: 80px; max-height: 80px;
         border-radius: 50%;
         background: linear-gradient(180deg, #d8ff5e 0%, #b6e636 100%);
         color: #13260b;
         display: flex; align-items: center; justify-content: center;
         font-size: min(7vh,11vw); font-weight: 300; line-height: 1;
         box-shadow: 0 8px 22px rgba(0,0,0,0.4), inset 0 -3px 0 rgba(0,0,0,0.12);
-        border: 3px solid rgba(255,255,255,0.85);
+        border: 3px solid rgba(255,255,255,0.85); cursor: pointer;
       }
       @media (orientation: landscape) {
-        .plus-btn {
-          width: min(13vw,14vh); height: min(13vw,14vh);
-          font-size: min(8vw,9vh);
+        .plus-btn { width: min(13vw,14vh); height: min(13vw,14vh); font-size: min(8vw,9vh); }
+      }
+
+      /* Sound buttons — portrait: bottom center, landscape: right side stacked */
+      .sound-buttons-wrap {
+        position: absolute; z-index: 5; pointer-events: none;
+        bottom: clamp(14px,3.5vh,24px); left: 0; right: 0;
+        display: flex; justify-content: center; gap: clamp(8px,2vw,12px);
+      }
+      .sound-buttons-wrap button { pointer-events: auto; }
+      @media (orientation: landscape) {
+        .sound-buttons-wrap {
+          bottom: auto; left: auto;
+          top: 50%; right: clamp(8px,1.2vw,14px);
+          transform: translateY(-50%);
+          flex-direction: column; align-items: flex-end;
+          gap: clamp(6px,1.2vh,10px);
         }
       }
 
-      /* Setup screen names: stack in portrait, side by side in landscape */
-      .setup-names {
-        display: flex; flex-direction: column; gap: 14px;
-        width: 100%; max-width: 340px;
-      }
-      @media (orientation: landscape) {
-        .setup-names { flex-direction: row; max-width: 560px; }
+      /* Hamburger button */
+      .hamburger-btn {
+        position: absolute; bottom: clamp(10px,2.2vh,18px); right: clamp(10px,2.2vw,18px);
+        z-index: 5; width: 36px; height: 36px;
+        background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.22);
+        color: #fff; font-size: 17px; border-radius: 9px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: auto;
       }
 
-      /* Setup options row */
-      .setup-options {
-        display: flex; flex-direction: column; gap: 14px; align-items: center;
+      /* Setup screen names */
+      .setup-names {
+        display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 340px;
       }
-      @media (orientation: landscape) {
-        .setup-options { flex-direction: row; gap: 24px; }
-      }
+      @media (orientation: landscape) { .setup-names { flex-direction: row; max-width: 560px; } }
+
+      /* Setup options */
+      .setup-options { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+      @media (orientation: landscape) { .setup-options { flex-direction: row; gap: 24px; } }
     `}</style>
   );
 }
@@ -145,10 +160,8 @@ function AppFull() {
     const nextState = awardPoint(state, p);
     setHistory((h) => [...h, prevState]);
     setState(nextState);
-
-    const gameWon = nextState.games[0] + nextState.games[1] >
-                    prevState.games[0] + prevState.games[1];
-    const setWon  = nextState.completedSets.length > prevState.completedSets.length;
+    const gameWon  = nextState.games[0] + nextState.games[1] > prevState.games[0] + prevState.games[1];
+    const setWon   = nextState.completedSets.length > prevState.completedSets.length;
     const matchWon = nextState.matchWinner != null && prevState.matchWinner == null;
     if (matchWon) return;
     if (setWon) playSetSound();
@@ -171,14 +184,12 @@ function AppFull() {
     setHistory([]);
   }
 
-  // Match court surround colour so there is never a black flash during rotation
-  const courtBg = { hard: '#2f6b2f', clay: '#2d4a26', grass: '#3f5a26' }[t.court] || '#2d4a26';
+  const courtBg = { hard: '#1a4a80', clay: '#2d4a26', grass: '#3f5a26' }[t.court] || '#1a4a80';
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', background: courtBg }}>
       <AppStyles />
 
-      {/* Both courts stay in the DOM — CSS media query shows the right one */}
       <div className="court-portrait"><CourtBackground palette={t.court} /></div>
       <div className="court-landscape"><CourtBackgroundLandscape palette={t.court} /></div>
 
@@ -197,30 +208,17 @@ function AppFull() {
             onReset={handleReset}
             canUndo={history.length > 0}
             voiceProps={{
-              enabled: voiceOn,
-              listening: voice.listening,
-              supported: voice.supported,
-              onToggle: toggleVoice,
+              enabled: voiceOn, listening: voice.listening,
+              supported: voice.supported, onToggle: toggleVoice,
             }}
           />
+          <SoundButtons />
           <VoiceToast heard={voice.lastHeard} />
-          <WinnerOverlay
-            state={state}
-            onNewMatch={handleNewMatch}
-            onRematch={handleRematch}
-          />
+          <WinnerOverlay state={state} onNewMatch={handleNewMatch} onRematch={handleRematch} />
         </>
       )}
 
-      <TweaksPanel>
-        <TweakSection label="Bane" />
-        <TweakRadio
-          label="Underlag"
-          value={t.court}
-          options={['hard', 'clay', 'grass']}
-          onChange={(v) => setTweak('court', v)}
-        />
-      </TweaksPanel>
+      <HamburgerMenu court={t.court} onChange={(v) => setTweak('court', v)} />
     </div>
   );
 }
