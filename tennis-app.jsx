@@ -75,20 +75,19 @@ function AppStyles() {
         .plus-btn { width: min(13vw,14vh); height: min(13vw,14vh); font-size: min(8vw,9vh); }
       }
 
-      /* Sound buttons — portrait: bottom center, landscape: right side stacked */
+      /* Sound buttons — right side, vertically centred
+         Portrait: shift down ~60px to clear the net-line controls */
       .sound-buttons-wrap {
         position: absolute; z-index: 5; pointer-events: none;
-        bottom: clamp(14px,3.5vh,24px); left: 0; right: 0;
-        display: flex; justify-content: center; gap: clamp(8px,2vw,12px);
+        top: calc(50% + clamp(48px,8vh,70px)); right: clamp(8px,1.5vw,16px);
+        transform: translateY(-50%);
+        display: flex; flex-direction: column; align-items: flex-end;
+        gap: clamp(6px,1.2vh,10px);
       }
       .sound-buttons-wrap button { pointer-events: auto; }
       @media (orientation: landscape) {
         .sound-buttons-wrap {
-          bottom: auto; left: auto;
-          top: 50%; right: clamp(8px,1.2vw,14px);
-          transform: translateY(-50%);
-          flex-direction: column; align-items: flex-end;
-          gap: clamp(6px,1.2vh,10px);
+          top: 50%;  /* back to true centre in landscape */
         }
       }
 
