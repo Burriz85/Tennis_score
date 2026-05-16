@@ -226,8 +226,15 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
 
   return (
     <div className="center-controls-wrap">
-      <div className="cc-left" style={{ pointerEvents: 'auto' }}>
+      <div className="cc-left" style={{ pointerEvents: 'auto', gap: 6 }}>
         <Btn onClick={onUndo} disabled={!canUndo} title="Angre">↶</Btn>
+        {voiceProps && (
+          <MicButton
+            enabled={voiceProps.enabled} listening={voiceProps.listening}
+            supported={voiceProps.supported} onToggle={voiceProps.onToggle}
+          />
+        )}
+        <Btn onClick={onReset} title="Nullstill">⟳</Btn>
       </div>
       <div className="cc-mid">
         <div style={{
@@ -242,15 +249,7 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
           pointerEvents: 'none',
         }}>{statusLine(state)}</div>
       </div>
-      <div className="cc-right" style={{ pointerEvents: 'auto' }}>
-        {voiceProps && (
-          <MicButton
-            enabled={voiceProps.enabled} listening={voiceProps.listening}
-            supported={voiceProps.supported} onToggle={voiceProps.onToggle}
-          />
-        )}
-        <Btn onClick={onReset} title="Nullstill">⟳</Btn>
-      </div>
+      <div className="cc-right" />
     </div>
   );
 }
