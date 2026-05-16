@@ -19,10 +19,14 @@ function AppStyles() {
       .center-controls-wrap {
         position: absolute; left: 0; right: 0; z-index: 4;
         top: 50%; transform: translateY(-50%);
-        display: flex; justify-content: space-between; align-items: center;
+        display: grid; grid-template-columns: 1fr auto 1fr;
+        align-items: center;
         padding: 0 clamp(8px,2.5vw,16px); gap: 8px;
         pointer-events: none;
       }
+      .center-controls-wrap .cc-left  { display: flex; justify-content: flex-start; }
+      .center-controls-wrap .cc-mid   { display: flex; justify-content: center; }
+      .center-controls-wrap .cc-right { display: flex; justify-content: flex-end; gap: 6px; }
       @media (orientation: landscape) {
         .center-controls-wrap {
           top: 0; transform: none;
@@ -75,25 +79,25 @@ function AppStyles() {
         .plus-btn { width: min(13vw,14vh); height: min(13vw,14vh); font-size: min(8vw,9vh); }
       }
 
-      /* Sound buttons — right side, vertically centred
-         Portrait: shift down ~60px to clear the net-line controls */
+      /* Sound buttons — portrait: bottom-right (player 2 side, clear of net controls)
+                          landscape: right side vertically centred */
       .sound-buttons-wrap {
         position: absolute; z-index: 5; pointer-events: none;
-        top: calc(50% + clamp(48px,8vh,70px)); right: clamp(8px,1.5vw,16px);
-        transform: translateY(-50%);
+        bottom: clamp(70px,14vh,110px); right: clamp(8px,1.5vw,16px);
         display: flex; flex-direction: column; align-items: flex-end;
         gap: clamp(6px,1.2vh,10px);
       }
       .sound-buttons-wrap button { pointer-events: auto; }
       @media (orientation: landscape) {
         .sound-buttons-wrap {
-          top: 50%;  /* back to true centre in landscape */
+          bottom: auto;
+          top: 50%; transform: translateY(-50%);
         }
       }
 
       /* Hamburger button */
       .hamburger-btn {
-        position: absolute; bottom: clamp(10px,2.2vh,18px); right: clamp(10px,2.2vw,18px);
+        position: absolute; top: clamp(10px,2.2vh,18px); right: clamp(10px,2.2vw,18px);
         z-index: 5; width: 36px; height: 36px;
         background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.22);
         color: #fff; font-size: 17px; border-radius: 9px; cursor: pointer;

@@ -226,23 +226,23 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
 
   return (
     <div className="center-controls-wrap">
-      <div style={{ pointerEvents: 'auto', flexShrink: 0 }}>
+      <div className="cc-left" style={{ pointerEvents: 'auto' }}>
         <Btn onClick={onUndo} disabled={!canUndo} title="Angre">↶</Btn>
       </div>
-      <div style={{
-        background: 'rgba(0,0,0,0.65)',
-        backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-        border: '1px solid rgba(255,255,255,0.2)', borderRadius: 999,
-        padding: 'clamp(4px,1vh,6px) clamp(8px,2.5vw,14px)',
-        color: '#fff', fontSize: 'clamp(9px,1.6vh,11px)',
-        letterSpacing: '0.08em', textTransform: 'uppercase',
-        fontWeight: 600, whiteSpace: 'nowrap',
-        overflow: 'hidden', textOverflow: 'ellipsis',
-        maxWidth: 'calc(100% - 120px)',
-        fontFamily: 'Inter, system-ui, sans-serif',
-        pointerEvents: 'none',
-      }}>{statusLine(state)}</div>
-      <div style={{ pointerEvents: 'auto', flexShrink: 0, display: 'flex', gap: 6 }}>
+      <div className="cc-mid">
+        <div style={{
+          background: 'rgba(0,0,0,0.65)',
+          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+          border: '1px solid rgba(255,255,255,0.2)', borderRadius: 999,
+          padding: 'clamp(4px,1vh,6px) clamp(8px,2.5vw,14px)',
+          color: '#fff', fontSize: 'clamp(9px,1.6vh,11px)',
+          letterSpacing: '0.08em', textTransform: 'uppercase',
+          fontWeight: 600, whiteSpace: 'nowrap',
+          fontFamily: 'Inter, system-ui, sans-serif',
+          pointerEvents: 'none',
+        }}>{statusLine(state)}</div>
+      </div>
+      <div className="cc-right" style={{ pointerEvents: 'auto' }}>
         {voiceProps && (
           <MicButton
             enabled={voiceProps.enabled} listening={voiceProps.listening}
@@ -315,7 +315,7 @@ function HamburgerMenu({ court, onChange }) {
         >
           <div
             style={{
-              position: 'absolute', bottom: 60, right: 14,
+              position: 'absolute', top: 60, right: 14,
               background: 'rgba(10,10,10,0.92)',
               backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
               border: '1px solid rgba(255,255,255,0.14)',
