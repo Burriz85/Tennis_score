@@ -1,5 +1,8 @@
-// service-worker.js — minimal offline cache for Tennis Score PWA
-const CACHE = 'tennis-score-v6';
+// service-worker.js — offline cache for Tennis Score PWA
+// Strategy:
+//   - App shell (HTML/JSX/manifest): network-first, so design changes ship immediately
+//   - Vendor libs (unpkg) + static assets (audio/icons): cache-first
+const CACHE = 'tennis-score-v12';
 const FILES = [
   './',
   './index.html',
@@ -42,11 +45,31 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  const isAppShell =
+    url.origin === self.location.origin &&
+    /\.(html|jsx|js|webmanifest)$|\/$/i.test(url.pathname);
+
+  if (isAppShell) {
+    // network-first: try the network so JSX edits show up on reload,
+    // fall back to cache when offline.
+    e.respondWith(
+      fetch(e.request).then((res) => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, clone)).catch(() => {});
+        }
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // cache-first for everything else (vendor libs, audio, icons)
   e.respondWith(
     caches.match(e.request).then((cached) => {
       if (cached) return cached;
       return fetch(e.request).then((res) => {
-        // cache same-origin / unpkg responses on the fly
         if (res && res.status === 200) {
           const clone = res.clone();
           caches.open(CACHE).then((c) => c.put(e.request, clone)).catch(() => {});

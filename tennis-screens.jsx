@@ -1,97 +1,261 @@
 // tennis-screens.jsx — setup, match, winner overlay
 
 // ──────────────────────────────────────────────────────────────
-// Setup screen
+// Setup screen — preset-driven with Single / Double toggle
 // ──────────────────────────────────────────────────────────────
 function SetupScreen({ initial, onStart }) {
-  const [n1, setN1] = React.useState(initial.names[0]);
-  const [n2, setN2] = React.useState(initial.names[1]);
-  const [bestOf, setBestOf] = React.useState(initial.bestOf);
-  const [server, setServer] = React.useState(0);
+  const init = initial || {};
+  const presets = window.MATCH_PRESETS || [];
+
+  // ── derive initial state from `initial` (back-compat with old shape) ──
+  const initIsDoubles =
+    init.mode === 'doubles' ||
+    (Array.isArray(init.players) && Array.isArray(init.players[0]) && init.players[0].length > 1);
+  const initT1 = Array.isArray(init.players?.[0]) ? init.players[0] : [init.players?.[0] ?? init.names?.[0] ?? 'Spiller 1', ''];
+  const initT2 = Array.isArray(init.players?.[1]) ? init.players[1] : [init.players?.[1] ?? init.names?.[1] ?? 'Spiller 2', ''];
+
+  const [mode, setMode] = React.useState(initIsDoubles ? 'doubles' : 'singles');
+  const [t1a, setT1a] = React.useState(initT1[0] || 'Spiller 1');
+  const [t1b, setT1b] = React.useState(initT1[1] || '');
+  const [t2a, setT2a] = React.useState(initT2[0] || 'Spiller 2');
+  const [t2b, setT2b] = React.useState(initT2[1] || '');
+  const [presetId, setPresetId] = React.useState(init.presetId || presets[0]?.id || 'std3');
+  const [server, setServer] = React.useState(init.server ?? 0);
   const [showCoin, setShowCoin] = React.useState(false);
 
   const fieldStyle = {
     background: 'rgba(255,255,255,0.08)',
     border: '1.5px solid rgba(255,255,255,0.22)',
-    borderRadius: 12, padding: '12px 16px',
-    color: '#fff', fontSize: 17, fontWeight: 500,
+    borderRadius: 12, padding: '11px 14px',
+    color: '#fff', fontSize: 16, fontWeight: 500,
     fontFamily: 'inherit', width: '100%',
     boxSizing: 'border-box', outline: 'none', textAlign: 'center',
   };
+  const labelCSS = {
+    fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase',
+    opacity: 0.62, display: 'block', marginBottom: 6, textAlign: 'center',
+  };
 
-  const Segment = ({ value, onChange, options }) => (
+  // ── Mode toggle (sliding-thumb segmented control) ──
+  const ModeSlider = () => (
     <div style={{
-      display: 'inline-flex', background: 'rgba(0,0,0,0.35)',
-      border: '1px solid rgba(255,255,255,0.18)', borderRadius: 999, padding: 3,
+      position: 'relative', display: 'inline-flex',
+      background: 'rgba(0,0,0,0.38)', border: '1px solid rgba(255,255,255,0.18)',
+      borderRadius: 999, padding: 4, width: 240,
     }}>
-      {options.map((o) => (
-        <button key={o.value} onClick={() => onChange(o.value)} style={{
-          background: value === o.value ? '#d8ff5e' : 'transparent',
-          color: value === o.value ? '#13260b' : '#fff',
-          border: 'none', padding: '8px 14px', borderRadius: 999,
-          fontSize: 13, fontWeight: 600, cursor: 'pointer', minWidth: 80,
+      <div style={{
+        position: 'absolute', top: 4, bottom: 4,
+        left: mode === 'singles' ? 4 : '50%',
+        width: 'calc(50% - 4px)',
+        background: 'linear-gradient(180deg,#d8ff5e 0%,#b6e636 100%)',
+        borderRadius: 999, transition: 'left 0.22s cubic-bezier(.4,1.4,.6,1)',
+        boxShadow: '0 2px 8px rgba(216,255,94,0.35)',
+      }} />
+      {[
+        { v: 'singles', label: 'Single' },
+        { v: 'doubles', label: 'Double' },
+      ].map(o => (
+        <button key={o.v} onClick={() => setMode(o.v)} style={{
+          position: 'relative', flex: 1, zIndex: 1,
+          background: 'transparent', border: 'none',
+          color: mode === o.v ? '#13260b' : '#fff',
+          padding: '9px 0', fontSize: 14, fontWeight: 700,
+          fontFamily: 'inherit', cursor: 'pointer',
+          letterSpacing: '0.02em',
+          transition: 'color 0.2s ease',
         }}>{o.label}</button>
       ))}
     </div>
   );
 
+  // ── Preset card (selectable rule pack) ──
+  const PresetCard = ({ p }) => {
+    const active = presetId === p.id;
+    return (
+      <button onClick={() => setPresetId(p.id)} style={{
+        textAlign: 'left',
+        background: active ? 'rgba(216,255,94,0.16)' : 'rgba(255,255,255,0.05)',
+        border: '1.5px solid ' + (active ? '#d8ff5e' : 'rgba(255,255,255,0.13)'),
+        borderRadius: 13, padding: '10px 12px',
+        color: '#fff', cursor: 'pointer', fontFamily: 'inherit',
+        display: 'flex', alignItems: 'center', gap: 11, width: '100%',
+      }}>
+        <div style={{
+          width: 16, height: 16, borderRadius: '50%',
+          border: '2px solid ' + (active ? '#d8ff5e' : 'rgba(255,255,255,0.42)'),
+          background: active ? '#d8ff5e' : 'transparent',
+          flexShrink: 0,
+        }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 1 }}>{p.label}</div>
+          <div style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.35 }}>{p.sub}</div>
+        </div>
+      </button>
+    );
+  };
+
+  // Server segmented control — labels swap based on mode
+  const ServerSeg = () => {
+    const leftLabel  = mode === 'doubles' ? (t1a || 'Lag 1') : (t1a || 'Spiller 1');
+    const rightLabel = mode === 'doubles' ? (t2a || 'Lag 2') : (t2a || 'Spiller 2');
+    const opts = [
+      { value: 0, label: leftLabel.length > 9 ? leftLabel.slice(0, 9) + '…' : leftLabel },
+      { value: 1, label: rightLabel.length > 9 ? rightLabel.slice(0, 9) + '…' : rightLabel },
+      { value: 'coin', label: '🪙' },
+    ];
+    return (
+      <div style={{
+        display: 'inline-flex', background: 'rgba(0,0,0,0.35)',
+        border: '1px solid rgba(255,255,255,0.18)', borderRadius: 999, padding: 3,
+      }}>
+        {opts.map(o => (
+          <button key={String(o.value)} onClick={() => o.value === 'coin' ? setShowCoin(true) : setServer(o.value)} style={{
+            background: server === o.value ? '#d8ff5e' : 'transparent',
+            color: server === o.value ? '#13260b' : '#fff',
+            border: 'none', padding: '7px 12px', borderRadius: 999,
+            fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            fontFamily: 'inherit', whiteSpace: 'nowrap',
+          }}>{o.label}</button>
+        ))}
+      </div>
+    );
+  };
+
+  const handleStart = () => {
+    const clean = (s, fb) => (s || '').trim() || fb;
+    const players = mode === 'doubles'
+      ? [
+          [clean(t1a, 'A1'), clean(t1b, 'A2')],
+          [clean(t2a, 'B1'), clean(t2b, 'B2')],
+        ]
+      : [clean(t1a, 'Spiller 1'), clean(t2a, 'Spiller 2')];
+    const preset = presets.find(p => p.id === presetId) || presets[0];
+    onStart({ mode, players, rules: preset?.rules, presetId, server });
+  };
+
   return (
     <div style={{
       position: 'absolute', inset: 0,
+      background: 'linear-gradient(180deg, #0c1424 0%, #050a14 100%)',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'flex-start',
-      color: '#fff', fontFamily: 'Inter, system-ui, sans-serif',
-      padding: 'clamp(12px,3vh,24px) clamp(16px,5vw,32px)',
-      boxSizing: 'border-box', gap: 'clamp(8px,1.6vh,14px)',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      padding: 'clamp(16px,4vh,32px) clamp(16px,5vw,28px)',
+      boxSizing: 'border-box',
       overflowY: 'auto', overflowX: 'hidden',
+      color: '#fff',
     }}>
+      {/* Subtle decorative court silhouette behind everything */}
+      <div aria-hidden="true" style={{
+        position: 'absolute', inset: 0,
+        background:
+          'radial-gradient(120% 60% at 50% 0%, rgba(31,95,168,0.22) 0%, transparent 60%),' +
+          'radial-gradient(120% 60% at 50% 100%, rgba(216,255,94,0.05) 0%, transparent 60%)',
+        pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'relative',
+        width: '100%', maxWidth: 400,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center',
+        gap: 'clamp(12px,2vh,16px)',
+      }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.7, marginBottom: 4 }}>Tennis Score</div>
-        <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.01em' }}>Ny kamp</div>
+        <div style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.55, marginBottom: 4 }}>Tennis Score</div>
+        <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-0.01em' }}>Ny kamp</div>
       </div>
-      <div className="setup-names">
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, display: 'block', marginBottom: 6, textAlign: 'center' }}>Spiller 1</label>
-          <input value={n1} onChange={(e) => setN1(e.target.value)} maxLength={14} style={fieldStyle} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, display: 'block', marginBottom: 6, textAlign: 'center' }}>Spiller 2</label>
-          <input value={n2} onChange={(e) => setN2(e.target.value)} maxLength={14} style={fieldStyle} />
+
+      <ModeSlider />
+
+      {/* Player name fields — adapt to mode */}
+      <div style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {mode === 'singles' ? (
+          <>
+            <div>
+              <label style={labelCSS}>Spiller 1 (øverst)</label>
+              <input value={t1a} onChange={(e) => setT1a(e.target.value)} maxLength={14} style={fieldStyle} />
+            </div>
+            <div>
+              <label style={labelCSS}>Spiller 2 (nederst)</label>
+              <input value={t2a} onChange={(e) => setT2a(e.target.value)} maxLength={14} style={fieldStyle} />
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <label style={labelCSS}>Lag 1 (øverst)</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input value={t1a} onChange={(e) => setT1a(e.target.value)} maxLength={10} placeholder="Spiller A" style={fieldStyle} />
+                <input value={t1b} onChange={(e) => setT1b(e.target.value)} maxLength={10} placeholder="Spiller B" style={fieldStyle} />
+              </div>
+            </div>
+            <div>
+              <label style={labelCSS}>Lag 2 (nederst)</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input value={t2a} onChange={(e) => setT2a(e.target.value)} maxLength={10} placeholder="Spiller A" style={fieldStyle} />
+                <input value={t2b} onChange={(e) => setT2b(e.target.value)} maxLength={10} placeholder="Spiller B" style={fieldStyle} />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Format preset cards */}
+      <div style={{ width: '100%', maxWidth: 360 }}>
+        <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.55, marginBottom: 6, paddingLeft: 2 }}>Format</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {presets.map(p => <PresetCard key={p.id} p={p} />)}
         </div>
       </div>
-      <div className="setup-options">
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65 }}>Kamp</label>
-          <Segment value={bestOf} onChange={setBestOf} options={[
-            { value: 3, label: 'Best av 3' }, { value: 5, label: 'Best av 5' },
-          ]} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          <label style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65 }}>Server</label>
-          <Segment value={server} onChange={(v) => {
-            if (v === 'coin') { setShowCoin(true); } else { setServer(v); }
-          }} options={[
-            { value: 0, label: n1 || 'Spiller 1' },
-            { value: 1, label: n2 || 'Spiller 2' },
-            { value: 'coin', label: '🪙 Mynt' },
-          ]} />
-        </div>
+
+      {/* Server */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+        <label style={{ ...labelCSS, marginBottom: 0 }}>Server</label>
+        <ServerSeg />
       </div>
-      <button onClick={() => onStart({
-        names: [n1.trim() || 'Spiller 1', n2.trim() || 'Spiller 2'], bestOf, server,
-      })} style={{
+
+      <button onClick={handleStart} style={{
         background: 'linear-gradient(180deg,#d8ff5e 0%,#b6e636 100%)',
         color: '#13260b', border: '3px solid rgba(255,255,255,0.85)',
-        padding: '14px 48px', fontSize: 17, fontWeight: 700,
+        padding: '13px 44px', fontSize: 16, fontWeight: 700,
         borderRadius: 999, cursor: 'pointer',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.35)', marginTop: 4,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.35)', marginTop: 2,
       }}>Start kamp</button>
+
       {showCoin && (
         <CoinToss
-          names={[n1.trim() || 'Spiller 1', n2.trim() || 'Spiller 2']}
+          names={[
+            mode === 'doubles' ? `${t1a} / ${t1b}` : (t1a || 'Spiller 1'),
+            mode === 'doubles' ? `${t2a} / ${t2b}` : (t2a || 'Spiller 2'),
+          ]}
           onDone={(w) => { setServer(w); setShowCoin(false); }}
         />
       )}
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────
+// Serve pips — two dots showing 1st/2nd serve state
+// ──────────────────────────────────────────────────────────────
+function ServePips({ active, fault, small }) {
+  if (!active) return null;
+  const size = small ? 'clamp(7px,1.2vh,9px)' : 'clamp(9px,1.5vh,11px)';
+  const dot = (lit) => (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: lit ? '#e3ff5b' : 'transparent',
+      border: '1.5px solid ' + (lit ? '#e3ff5b' : 'rgba(255,255,255,0.55)'),
+      boxShadow: lit ? '0 0 8px rgba(227,255,91,0.55)' : 'none',
+      flexShrink: 0,
+    }} />
+  );
+  return (
+    <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}
+      title={fault ? '2. serve' : '1. serve'}>
+      {dot(!fault)}
+      {dot(fault)}
     </div>
   );
 }
@@ -101,7 +265,7 @@ function SetupScreen({ initial, onStart }) {
 // Portrait: p=0 top (rotated 180°), p=1 bottom.
 // Landscape: p=0 left, p=1 right (no rotation).
 // ──────────────────────────────────────────────────────────────
-function MatchSide({ state, p, onPoint }) {
+function MatchSide({ state, p, side, onPoint }) {
   const [pts1, pts2] = formatPoints(state);
   const myPts = p === 0 ? pts1 : pts2;
   const isServer = state.server === p;
@@ -138,7 +302,7 @@ function MatchSide({ state, p, onPoint }) {
   }
 
   return (
-    <div className={`match-side match-side-p${p}`} style={{
+    <div className={`match-side match-side-p${p} match-side-${side || (p === 0 ? 'left' : 'right')}`} style={{
       flex: 1, position: 'relative', color: '#fff',
       fontFamily: 'Inter, system-ui, sans-serif', overflow: 'hidden',
     }}>
@@ -158,15 +322,39 @@ function MatchSide({ state, p, onPoint }) {
             padding: 'clamp(4px,1vh,6px) clamp(10px,3vw,14px)',
             borderRadius: 999, border: '1px solid rgba(255,255,255,0.18)',
           }}>
-            {isServer && (
-              <div style={{
-                width: 'clamp(9px,1.5vh,11px)', height: 'clamp(9px,1.5vh,11px)',
-                borderRadius: '50%', background: '#e3ff5b',
-                border: '1.5px solid #fff', boxShadow: '0 0 8px rgba(227,255,91,0.6)',
-                flexShrink: 0,
-              }} />
+            {state.mode !== 'doubles' && (
+              <ServePips active={isServer} fault={state.serveFault} />
             )}
-            <span style={{ fontSize: 'clamp(11px,1.8vh,14px)', fontWeight: 600 }}>{state.names[p]}</span>
+            {state.mode === 'doubles' ? (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center',
+                gap: 'clamp(5px,1.2vw,8px)',
+                fontSize: 'clamp(11px,1.8vh,14px)', fontWeight: 600,
+              }}>
+                {(state.players?.[p] || [state.names[p]]).map((nm, idx, arr) => {
+                  const activeHere = isServer && (state.serverPlayer?.[p] ?? 0) === idx;
+                  return (
+                    <React.Fragment key={idx}>
+                      {idx > 0 && (
+                        <span style={{ opacity: 0.35, fontSize: '0.9em' }}>·</span>
+                      )}
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center',
+                        gap: 'clamp(4px,1vw,6px)',
+                        opacity: activeHere ? 1 : 0.55,
+                      }}>
+                        {activeHere && (
+                          <ServePips active={true} fault={state.serveFault} small />
+                        )}
+                        {nm}
+                      </span>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            ) : (
+              <span style={{ fontSize: 'clamp(11px,1.8vh,14px)', fontWeight: 600 }}>{state.names[p]}</span>
+            )}
             <div style={{ width: 1, height: 'clamp(10px,1.6vh,12px)', background: 'rgba(255,255,255,0.3)' }} />
             <div style={{ display: 'flex', gap: 'clamp(3px,0.6vw,4px)' }}>{pips}</div>
           </div>
@@ -255,34 +443,56 @@ function CenterControls({ state, onUndo, onReset, canUndo, voiceProps }) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Sound buttons — floating, portrait=bottom, landscape=right
+// Sound buttons — also fire engine actions for FAULT and LET.
+// OUT stays as a vocal call only (intent is ambiguous; the player
+// taps + on their own side to award the point).
 // ──────────────────────────────────────────────────────────────
-function SoundButtons() {
+function SoundButtons({ onFault, onLet, serveFault }) {
   const btns = [
-    { label: 'OUT',   icon: '✕', file: 'sound-out.mp3',   bg: '#e53935' },
-    { label: 'FAULT', icon: '!', file: 'sound-fault.mp3', bg: '#ef6c00' },
-    { label: 'LET',   icon: '↺', file: 'sound-let.mp3',   bg: '#1976d2' },
+    { label: 'OUT',   icon: '✕', file: 'sound-out.mp3',   bg: '#e53935', action: 'sound' },
+    { label: 'FAULT', icon: '!', file: 'sound-fault.mp3', bg: '#ef6c00', action: 'fault' },
+    { label: 'LET',   icon: '↺', file: 'sound-let.mp3',   bg: '#1976d2', action: 'let' },
   ];
   return (
     <div className="sound-buttons-wrap">
-      {btns.map(({ label, icon, file, bg }) => (
-        <button key={label}
-          onClick={(e) => { e.stopPropagation(); playFile(file); }}
-          style={{
-            background: bg, color: '#fff', border: 'none',
-            borderRadius: 10,
-            padding: 'clamp(7px,1.5vh,10px) clamp(14px,2.8vw,20px)',
-            fontSize: 'clamp(11px,1.7vh,14px)', fontWeight: 700,
-            fontFamily: 'Inter, system-ui, sans-serif',
-            letterSpacing: '0.07em', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 6,
-            boxShadow: '0 3px 10px rgba(0,0,0,0.35)',
-            whiteSpace: 'nowrap',
-          }}>
-          <span style={{ fontSize: '1em', lineHeight: 1 }}>{icon}</span>
-          {label}
-        </button>
-      ))}
+      {btns.map(({ label, icon, file, bg, action }) => {
+        const showFaultBadge = action === 'fault' && serveFault;
+        return (
+          <button key={label}
+            onClick={(e) => {
+              e.stopPropagation();
+              playFile(file);
+              if (action === 'fault' && onFault) onFault();
+              else if (action === 'let' && onLet) onLet();
+            }}
+            style={{
+              background: bg, color: '#fff', border: 'none',
+              borderRadius: 10,
+              padding: 'clamp(7px,1.5vh,10px) clamp(14px,2.8vw,20px)',
+              fontSize: 'clamp(11px,1.7vh,14px)', fontWeight: 700,
+              fontFamily: 'Inter, system-ui, sans-serif',
+              letterSpacing: '0.07em', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+              boxShadow: showFaultBadge
+                ? '0 0 0 2px #e3ff5b, 0 3px 10px rgba(0,0,0,0.35)'
+                : '0 3px 10px rgba(0,0,0,0.35)',
+              whiteSpace: 'nowrap', position: 'relative',
+            }}>
+            <span style={{ fontSize: '1em', lineHeight: 1 }}>{icon}</span>
+            {label}
+            {showFaultBadge && (
+              <span style={{
+                position: 'absolute', top: -6, right: -6,
+                background: '#e3ff5b', color: '#13260b',
+                fontSize: 9, fontWeight: 800, letterSpacing: '0.04em',
+                padding: '2px 5px', borderRadius: 999,
+                border: '1.5px solid #1a1a1a',
+                lineHeight: 1,
+              }}>1.</span>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -356,43 +566,166 @@ function HamburgerMenu({ court, onChange }) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Winner overlay
+// Changeover overlay — appears briefly when players switch sides
+// ──────────────────────────────────────────────────────────────
+function ChangeoverOverlay({ show, onDismiss }) {
+  React.useEffect(() => {
+    if (!show) return;
+    const t = setTimeout(() => onDismiss && onDismiss(), 4500);
+    return () => clearTimeout(t);
+  }, [show, onDismiss]);
+  if (!show) return null;
+  return (
+    <div onClick={onDismiss} style={{
+      position: 'absolute', inset: 0,
+      background: 'rgba(8,12,20,0.78)',
+      backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      gap: 18, color: '#fff', zIndex: 7,
+      animation: 'changeoverFade 220ms ease-out',
+      cursor: 'pointer',
+      fontFamily: 'Inter, system-ui, sans-serif',
+    }}>
+      <div style={{
+        fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase',
+        color: '#d8ff5e', fontWeight: 700,
+      }}>Bytt side</div>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 28,
+        fontSize: 'clamp(40px,7vh,56px)', color: '#d8ff5e',
+      }}>
+        <div style={{ animation: 'changeoverRight 1.4s ease-in-out infinite' }}>→</div>
+        <div style={{
+          width: 56, height: 56, borderRadius: '50%',
+          border: '2px dashed rgba(255,255,255,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 24, color: 'rgba(255,255,255,0.85)',
+        }}>↔</div>
+        <div style={{ animation: 'changeoverLeft 1.4s ease-in-out infinite' }}>←</div>
+      </div>
+      <div style={{
+        fontSize: 13, color: 'rgba(255,255,255,0.65)',
+        maxWidth: 240, textAlign: 'center', lineHeight: 1.4,
+      }}>Spillerne bytter banehalvdel.<br/>Tapp for å lukke.</div>
+      <style>{`
+        @keyframes changeoverFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes changeoverRight {
+          0%,100% { transform: translateX(-8px); opacity: 0.55; }
+          50%     { transform: translateX(8px);  opacity: 1; }
+        }
+        @keyframes changeoverLeft {
+          0%,100% { transform: translateX(8px);  opacity: 0.55; }
+          50%     { transform: translateX(-8px); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────
+// Winner overlay — match summary with duration + share-as-image
 // ──────────────────────────────────────────────────────────────
 function WinnerOverlay({ state, onNewMatch, onRematch }) {
   const w = state.matchWinner;
-  React.useEffect(() => { if (w != null) playMatchSound(); }, [w]);
+  // ALL hooks must come before any early return.
+  React.useEffect(() => {
+    if (w != null) playMatchSound();
+  }, [w]);
+  const [sharing, setSharing] = React.useState(false);
   if (w == null) return null;
+
+  const totalGames = state.completedSets.reduce((n, s) => n + s[0] + s[1], 0);
+  const duration = formatDuration(matchDurationMs(state));
   const summary = state.completedSets.map(s => `${s[0]}–${s[1]}`).join('  ·  ');
+
+  const handleShare = async () => {
+    setSharing(true);
+    try {
+      await shareMatchSummary(state);
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const Stat = ({ label, value }) => (
+    <div style={{
+      flex: 1, padding: '10px 8px', textAlign: 'center',
+      background: 'rgba(255,255,255,0.05)',
+      border: '1px solid rgba(255,255,255,0.10)',
+      borderRadius: 10, minWidth: 80,
+    }}>
+      <div style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.55, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 'clamp(16px,2.6vh,20px)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+    </div>
+  );
+
   return (
     <div style={{
       position: 'absolute', inset: 0,
-      background: 'rgba(0,0,0,0.75)',
-      backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+      background: 'rgba(0,0,0,0.78)',
+      backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       color: '#fff', fontFamily: 'Inter, system-ui, sans-serif',
-      zIndex: 6, padding: '24px 32px', boxSizing: 'border-box', textAlign: 'center',
+      zIndex: 6, padding: '24px 28px', boxSizing: 'border-box', textAlign: 'center',
+      overflowY: 'auto',
     }}>
       <Confetti active={true} />
-      <div style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.7, marginBottom: 6, zIndex: 8 }}>Kamp ferdig</div>
-      <div style={{ fontSize: 'clamp(22px,4vh,30px)', fontWeight: 700, marginBottom: 4, letterSpacing: '-0.01em', zIndex: 8 }}>{state.names[w]} vant!</div>
-      <div style={{ fontSize: 'clamp(12px,2vh,14px)', opacity: 0.75, marginBottom: 22, fontVariantNumeric: 'tabular-nums', zIndex: 8 }}>{summary}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 240, zIndex: 8 }}>
-        <button onClick={onRematch} style={{
-          background: 'linear-gradient(180deg,#d8ff5e 0%,#b6e636 100%)',
-          color: '#13260b', border: '3px solid rgba(255,255,255,0.85)',
-          padding: '12px 26px', fontSize: 15, fontWeight: 700,
-          borderRadius: 999, cursor: 'pointer', boxShadow: '0 8px 22px rgba(0,0,0,0.35)',
-        }}>Omkamp</button>
-        <button onClick={onNewMatch} style={{
-          background: 'transparent', color: '#fff',
-          border: '1.5px solid rgba(255,255,255,0.4)',
-          padding: '11px 26px', fontSize: 14, fontWeight: 600,
-          borderRadius: 999, cursor: 'pointer',
-        }}>Ny kamp</button>
+      <div style={{ position: 'relative', zIndex: 8, width: '100%', maxWidth: 360,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+        <div style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', opacity: 0.65 }}>Kamp ferdig</div>
+        <div style={{ fontSize: 'clamp(24px,4.2vh,32px)', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.1 }}>
+          {state.names[w]}<br/>
+          <span style={{ fontSize: '0.65em', fontWeight: 500, opacity: 0.85 }}>vant kampen</span>
+        </div>
+        <div style={{
+          fontSize: 'clamp(18px,3vh,22px)', fontWeight: 700,
+          fontVariantNumeric: 'tabular-nums', letterSpacing: '0.06em',
+          color: '#d8ff5e',
+        }}>{summary}</div>
+
+        <div style={{ display: 'flex', gap: 8, width: '100%', marginTop: 4 }}>
+          <Stat label="Varighet" value={duration} />
+          <Stat label="Games" value={totalGames} />
+          <Stat label="Sett" value={state.completedSets.length} />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', marginTop: 6 }}>
+          <button onClick={handleShare} disabled={sharing} style={{
+            background: 'transparent', color: '#fff',
+            border: '1.5px solid rgba(255,255,255,0.35)',
+            padding: '11px 26px', fontSize: 14, fontWeight: 600,
+            borderRadius: 999, cursor: sharing ? 'wait' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            opacity: sharing ? 0.6 : 1,
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+              <polyline points="16 6 12 2 8 6"/>
+              <line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+            {sharing ? 'Lager bilde…' : 'Del som bilde'}
+          </button>
+          <button onClick={onRematch} style={{
+            background: 'linear-gradient(180deg,#d8ff5e 0%,#b6e636 100%)',
+            color: '#13260b', border: '3px solid rgba(255,255,255,0.85)',
+            padding: '12px 26px', fontSize: 15, fontWeight: 700,
+            borderRadius: 999, cursor: 'pointer', boxShadow: '0 8px 22px rgba(0,0,0,0.35)',
+          }}>Omkamp</button>
+          <button onClick={onNewMatch} style={{
+            background: 'transparent', color: '#fff',
+            border: '1.5px solid rgba(255,255,255,0.4)',
+            padding: '11px 26px', fontSize: 14, fontWeight: 600,
+            borderRadius: 999, cursor: 'pointer',
+          }}>Ny kamp</button>
+        </div>
       </div>
     </div>
   );
 }
 
-Object.assign(window, { SetupScreen, MatchSide, CenterControls, SoundButtons, HamburgerMenu, WinnerOverlay });
+Object.assign(window, {
+  SetupScreen, MatchSide, CenterControls, SoundButtons,
+  HamburgerMenu, WinnerOverlay, ChangeoverOverlay, ServePips,
+});

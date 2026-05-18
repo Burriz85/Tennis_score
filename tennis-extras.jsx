@@ -312,4 +312,183 @@ Object.assign(window, {
   useWakeLock, Confetti, CoinToss,
   playGameSound, playSetSound, playMatchSound, playCoinSound,
   playOutSound, playLetSound, playFoulSound, playFile,
+  renderMatchSummaryCanvas, shareMatchSummary,
 });
+
+// ──────────────────────────────────────────────────────────────
+// Match summary card — rendered to canvas, shared as PNG
+// ──────────────────────────────────────────────────────────────
+function renderMatchSummaryCanvas(state) {
+  const W = 1080, H = 1350; // 4:5 portrait, good for IG / messaging
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Background — tennis court gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#1f5fa8');
+  grad.addColorStop(1, '#0d2b4d');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Faint court lines decoration
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(60, 80, W - 120, H - 160);
+  ctx.beginPath();
+  ctx.moveTo(60, H / 2); ctx.lineTo(W - 60, H / 2);
+  ctx.stroke();
+
+  // Top label
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = '600 28px "Inter", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.letterSpacing = '0.2em';
+  ctx.fillText('KAMP FERDIG', W / 2, 160);
+
+  // Winner name
+  const w = state.matchWinner ?? 0;
+  ctx.fillStyle = '#fff';
+  ctx.font = '700 100px "Inter", system-ui, sans-serif';
+  const winnerName = state.names[w];
+  // wrap long names
+  ctx.fillText(winnerName.length > 18 ? winnerName.slice(0, 16) + '…' : winnerName, W / 2, 290);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = '500 38px "Inter", system-ui, sans-serif';
+  ctx.fillText('vant kampen', W / 2, 350);
+
+  // Set score — big tabular
+  const sets = state.completedSets;
+  ctx.fillStyle = '#d8ff5e';
+  ctx.font = '800 120px "Inter", system-ui, sans-serif';
+  const setScore = sets.map(s => `${s[0]}–${s[1]}`).join('  ');
+  ctx.fillText(setScore, W / 2, 540);
+
+  // Players row
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '600 22px "Inter", system-ui, sans-serif';
+  ctx.fillText(`${state.names[0]}   vs   ${state.names[1]}`, W / 2, 600);
+
+  // Sets-as-grid panel (per-set boxes)
+  const panelX = 100, panelY = 700, panelW = W - 200, panelH = 320;
+  ctx.fillStyle = 'rgba(0,0,0,0.32)';
+  roundRect(ctx, panelX, panelY, panelW, panelH, 22).fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, panelX, panelY, panelW, panelH, 22).stroke();
+
+  // header
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '600 22px "Inter", system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('SETT', panelX + 32, panelY + 50);
+  const colCount = sets.length;
+  const colW = (panelW - 280) / Math.max(colCount, 1);
+  for (let i = 0; i < colCount; i++) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '700 22px "Inter", system-ui, sans-serif';
+    ctx.fillText(String(i + 1), panelX + 240 + colW * (i + 0.5), panelY + 50);
+  }
+
+  for (let row = 0; row < 2; row++) {
+    const yBase = panelY + 110 + row * 90;
+    // name
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'left';
+    ctx.font = '600 30px "Inter", system-ui, sans-serif';
+    const nm = state.names[row];
+    ctx.fillText(nm.length > 14 ? nm.slice(0, 13) + '…' : nm, panelX + 32, yBase);
+    if (row === w) {
+      ctx.fillStyle = '#d8ff5e';
+      ctx.beginPath();
+      ctx.arc(panelX + 32 - 12, yBase - 10, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // per-set scores
+    for (let i = 0; i < colCount; i++) {
+      const s = sets[i];
+      const my = s[row], opp = s[1 - row];
+      const won = my > opp;
+      ctx.fillStyle = won ? '#d8ff5e' : '#fff';
+      ctx.textAlign = 'center';
+      ctx.font = '700 38px "Inter", system-ui, sans-serif';
+      ctx.fillText(String(my), panelX + 240 + colW * (i + 0.5), yBase);
+    }
+  }
+
+  // Stats row
+  const statsY = 1100;
+  const statBlock = (x, label, value) => {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = '600 22px "Inter", system-ui, sans-serif';
+    ctx.fillText(label, x, statsY);
+    ctx.fillStyle = '#fff';
+    ctx.font = '700 48px "Inter", system-ui, sans-serif';
+    ctx.fillText(value, x, statsY + 60);
+  };
+  const dur = formatDuration(matchDurationMs(state));
+  const totalGames = sets.reduce((n, s) => n + s[0] + s[1], 0);
+  statBlock(W / 4, 'VARIGHET', dur);
+  statBlock(W / 2, 'GAMES', String(totalGames));
+  statBlock((3 * W) / 4, 'SETT', String(sets.length));
+
+  // Footer
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '600 20px "Inter", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  const date = new Date(state.startedAt || Date.now());
+  const dateStr = date.toLocaleDateString('no-NO', { day: '2-digit', month: 'short', year: 'numeric' });
+  ctx.fillText(`${dateStr}  ·  Tennis Score`, W / 2, H - 60);
+
+  return canvas;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+  return ctx;
+}
+
+// Share or download the match summary as PNG.
+// Tries navigator.share first (mobile), falls back to download.
+async function shareMatchSummary(state) {
+  const canvas = renderMatchSummaryCanvas(state);
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/png', 0.95));
+  if (!blob) return;
+
+  const fileName = `tennis-${(state.names[state.matchWinner] || 'kamp').toLowerCase().replace(/\W+/g, '-')}.png`;
+  try {
+    if (navigator.canShare && navigator.share) {
+      const file = new File([blob], fileName, { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Tennis-kamp',
+          text: `${state.names[state.matchWinner]} vant — ${state.completedSets.map(s => `${s[0]}–${s[1]}`).join(' · ')}`,
+        });
+        return;
+      }
+    }
+  } catch (e) {
+    // user cancelled or share failed → fall through to download
+    if (e && e.name === 'AbortError') return;
+  }
+  // Fallback: download
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+}

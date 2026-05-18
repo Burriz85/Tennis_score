@@ -58,7 +58,7 @@ function AppStyles() {
           bottom: clamp(10px,2.5vh,18px); left: clamp(10px,2.5vw,20px); right: auto;
           justify-content: flex-start; align-items: center;
         }
-        .match-side-p1 .plus-btn-wrap {
+        .match-side-right .plus-btn-wrap {
           left: auto; right: clamp(10px,2.5vw,20px); justify-content: flex-end;
         }
       }
@@ -123,11 +123,19 @@ function AppFull() {
 
   const [screen, setScreen] = React.useState('setup');
   const [lastSetup, setLastSetup] = React.useState({
-    names: ['Spiller 1', 'Spiller 2'], bestOf: 5, server: 0,
+    mode: 'singles',
+    players: ['Spiller 1', 'Spiller 2'],
+    rules: (window.MATCH_PRESETS && window.MATCH_PRESETS[0]?.rules) || { bestOf: 3 },
+    presetId: 'std3',
+    server: 0,
   });
   const [history, setHistory] = React.useState([]);
-  const [state, setState] = React.useState(makeInitialMatch(['Spiller 1', 'Spiller 2'], 5, 0));
+  const [state, setState] = React.useState(
+    makeInitialMatch(['Spiller 1', 'Spiller 2'], { bestOf: 3 }, 0)
+  );
   const [voiceOn, setVoiceOn] = React.useState(false);
+  const [showChangeover, setShowChangeover] = React.useState(false);
+  const [sidesSwapped, setSidesSwapped] = React.useState(false);
 
   useWakeLock(screen === 'match' && state.matchWinner == null);
 
@@ -153,8 +161,9 @@ function AppFull() {
 
   function startMatch(cfg) {
     setLastSetup(cfg);
-    setState(makeInitialMatch(cfg.names, cfg.bestOf, cfg.server));
+    setState(makeInitialMatch(cfg.players, cfg.rules, cfg.server));
     setHistory([]);
+    setSidesSwapped(false);
     setScreen('match');
   }
   function handlePoint(p) {
@@ -163,14 +172,39 @@ function AppFull() {
     const nextState = awardPoint(state, p);
     setHistory((h) => [...h, prevState]);
     setState(nextState);
-    const gameWon  = nextState.games[0] + nextState.games[1] > prevState.games[0] + prevState.games[1];
+    const gameWon  = nextState.games[0] + nextState.games[1] > prevState.games[0] + prevState.games[1]
+                   || nextState.completedSets.length > prevState.completedSets.length
+                   || nextState.matchWinner != null;
     const setWon   = nextState.completedSets.length > prevState.completedSets.length;
     const matchWon = nextState.matchWinner != null && prevState.matchWinner == null;
+    if (nextState.changeover && !matchWon) {
+      setShowChangeover(true);
+    }
     if (matchWon) return;
     if (setWon) playSetSound();
     else if (gameWon) playGameSound();
   }
   handlePointRef.current = handlePoint;
+
+  function handleFault() {
+    if (state.matchWinner != null) return;
+    const prev = state;
+    const next = awardFault(state);
+    setHistory((h) => [...h, prev]);
+    setState(next);
+    if (next.changeover && next.matchWinner == null) setShowChangeover(true);
+  }
+
+  function handleLet() {
+    if (state.matchWinner != null) return;
+    const prev = state;
+    const next = awardLet(state);
+    // Let is a no-op for score; only push history if state actually changed
+    if (JSON.stringify(prev) !== JSON.stringify(next)) {
+      setHistory((h) => [...h, prev]);
+      setState(next);
+    }
+  }
 
   function handleUndo() {
     if (history.length === 0) return;
@@ -183,8 +217,9 @@ function AppFull() {
   }
   function handleNewMatch() { setScreen('setup'); }
   function handleRematch() {
-    setState(makeInitialMatch(lastSetup.names, lastSetup.bestOf, lastSetup.server));
+    setState(makeInitialMatch(lastSetup.players, lastSetup.rules, lastSetup.server));
     setHistory([]);
+    setSidesSwapped(false);
   }
 
   const courtBg = { hard: '#1a4a80', clay: '#2d4a26', grass: '#3f5a26' }[t.court] || '#1a4a80';
@@ -202,8 +237,8 @@ function AppFull() {
       {screen === 'match' && (
         <>
           <div className="match-halves">
-            <MatchSide state={state} p={0} onPoint={handlePoint} />
-            <MatchSide state={state} p={1} onPoint={handlePoint} />
+            <MatchSide state={state} p={sidesSwapped ? 1 : 0} side="left"  onPoint={handlePoint} />
+            <MatchSide state={state} p={sidesSwapped ? 0 : 1} side="right" onPoint={handlePoint} />
           </div>
           <CenterControls
             state={state}
@@ -215,8 +250,21 @@ function AppFull() {
               supported: voice.supported, onToggle: toggleVoice,
             }}
           />
-          <SoundButtons />
+          <SoundButtons
+            onFault={handleFault}
+            onLet={handleLet}
+            serveFault={state.serveFault}
+          />
           <VoiceToast heard={voice.lastHeard} />
+          <ChangeoverOverlay
+            show={showChangeover && state.matchWinner == null}
+            onDismiss={() => {
+              // Swap visual sides when the user acknowledges the changeover.
+              // Mirrors the real court — players physically switch ends.
+              setSidesSwapped(s => !s);
+              setShowChangeover(false);
+            }}
+          />
           <WinnerOverlay state={state} onNewMatch={handleNewMatch} onRematch={handleRematch} />
         </>
       )}
